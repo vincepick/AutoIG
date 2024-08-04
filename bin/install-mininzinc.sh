@@ -14,7 +14,7 @@ pushd $BIN_DIR
 OS=$(uname)
 if [ "$OS" == "Darwin" ]; then
     #url="https://github.com/MiniZinc/MiniZincIDE/releases/download/${version}/MiniZincIDE-${version}-bundled.dmg"
-    echo "Using local files (minizinc-2.8.5-part-mac.tgz) for minizinc installation"
+    echo "Using local files (minizinc-${version}-part-mac.tgz) for minizinc installation"
 elif [ "$OS" == "Linux" ]; then
     url="https://github.com/MiniZinc/MiniZincIDE/releases/download/${version}/MiniZincIDE-${version}-bundle-linux-x86_64.tgz"
 else
@@ -34,8 +34,8 @@ if [ "$OS" == "Linux" ]; then
     d=$(ls -d */)
     mv ${d}/* $BIN_DIR/$name
 else
-    cp $BIN_DIR/minizinc-2.8.5-part-mac.tgz ./
-    tar zxf minizinc-2.8.5-part-mac.tgz
+    cp $BIN_DIR/minizinc-${version}-part-mac.tgz ./
+    tar zxf minizinc-${version}-part-mac.tgz
     mv Resources/minizinc Resources/bin/
     cp -r Resources/* $BIN_DIR/minizinc
 fi
