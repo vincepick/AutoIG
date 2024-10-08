@@ -1,0 +1,23 @@
+2024-10-08 09:24:38: /AutoIG/scripts/wrapper.py 1 1 1965286212 dummy -tuner_nb_item_types 12 -tuner_nb_orders_delta 9 -tuner_nb_periods 4 -tuner_inventory_cost 8
+{'generalSettings': {'experimentType': 'graded', 'modelFile': '/AutoIG/data/models/lot-sizing/problem.mzn', 'generatorFile': '/AutoIG/data/models/lot-sizing/generator.essence', 'runDir': '/AutoIG/experiments/lot-sizing'}, 'generatorSettings': {'genSRTimeLimit': 300, 'genSRFlags': '-S0 -no-bound-vars', 'genSolver': 'minion', 'genSolverTimeLimit': '5', 'genSolverFlags': '-varorder domoverwdeg -valorder random'}, 'evaluationSettings': {'nEvaluations': 1, 'gradedTypes': 'all', 'solver': 'chuffed', 'solverType': 'complete', 'minTime': 0, 'solverFlags': '-f', 'totalTimeLimit': 5}}
+
+
+2024-10-08 09:24:38: Creating generator instance: ./detailed-output/gen-inst-1.param
+2024-10-08 09:24:38: conjure translate-parameter --eprime=./detailed-output/generator.eprime --essence-param=./detailed-output/gen-inst-1.param --eprime-param=./detailed-output/gen-inst-1.eprime-param
+2024-10-08 09:24:38: savilerow ./detailed-output/generator.eprime ./detailed-output/gen-inst-1.eprime-param -out-aux ./detailed-output/gen-inst-1.aux -out-minion ./detailed-output/gen-inst-1.minion -save-symbols -timelimit 300 -S0 -no-bound-vars
+2024-10-08 09:24:43: minion ./detailed-output/gen-inst-1.minion -solsout ./detailed-output/gen-inst-1.solution -randomseed 1965286212 -timelimit 5 -varorder domoverwdeg -valorder random
+2024-10-08 09:24:43: savilerow ./detailed-output/generator.eprime -mode ReadSolution -out-aux ./detailed-output/gen-inst-1.aux -out-solution ./detailed-output/gen-inst-1.solution.eprime-param -minion-sol-file ./detailed-output/gen-inst-1.solution
+2024-10-08 09:24:43: conjure translate-solution --eprime=./detailed-output/generator.eprime --essence-param=./detailed-output/gen-inst-1.param --eprime-solution=./detailed-output/gen-inst-1.solution.eprime-param --essence-solution ./detailed-output/gen-inst-1.solution.param
+
+
+2024-10-08 09:24:44: 
+Generator results: genInstance=gen-inst-1, genStatus=sat, genSRTime=4.673619270324707, genSolverTime=0.12556719779968262
+conjure autoig --remove-aux ./detailed-output/inst-1-1965286212.param ./detailed-output/inst-1-1965286212.auxRemoved.param
+conjure pretty ./detailed-output/inst-1-1965286212.auxRemoved.param --output-format=minizinc
+./detailed-output/inst-1-1965286212.dzn generated
+
+
+runsolver -w ./detailed-output/inst-1-1965286212.dzn.chuffed.runsolver -d 2 --wall-clock-limit 5 --vsize-limit 8192 minizinc --time-limit 5000 --solver chuffed -i  -f problem.mzn ./detailed-output/inst-1-1965286212.dzn --output-mode dzn --output-objective -s
+C 0.36881422996520996 {'objs': [], 'flattenStatus': 'ok', 'flattenTime': 0.191273, 'instanceType': 'unsat', 'answerStatus': 'unknown'}
+{'totalTime': 6.664607763290405, 'genResults': {'instance': 'gen-inst-1.param', 'status': 'sat', 'seed': 1965286212, 'SRTime': 4.673619270324707, 'solverTime': 0.12556719779968262}, 'instanceResults': {'instance': './detailed-output/inst-1-1965286212.dzn', 'status': 'ok', 'score': -1, 'results': {'main': {'runs': [{'seed': None, 'status': 'C', 'time': 0.36881422996520996, 'extra': {'objs': [], 'flattenStatus': 'ok', 'flattenTime': 0.191273, 'instanceType': 'unsat', 'answerStatus': 'unknown'}}]}, 'oracle': {'runs': []}}}, 'status': 'ok', 'score': -1}
+-1 6.66

@@ -1,0 +1,27 @@
+2024-10-08 10:03:37: /AutoIG/scripts/wrapper.py 1 1 719061008 dummy -A 137
+{'generalSettings': {'experimentType': 'graded', 'modelFile': '/AutoIG/data/models/macc/problem.mzn', 'generatorFile': '/AutoIG/data/models/simple/simple_gen.essence', 'runDir': '/AutoIG/experiments/simple'}, 'generatorSettings': {'genSRTimeLimit': 300, 'genSRFlags': '-S0 -no-bound-vars', 'genSolver': 'minion', 'genSolverTimeLimit': '5', 'genSolverFlags': '-varorder domoverwdeg -valorder random'}, 'evaluationSettings': {'nEvaluations': 1, 'gradedTypes': 'all', 'solver': 'chuffed', 'solverType': 'complete', 'minTime': 0, 'solverFlags': '-f', 'totalTimeLimit': 5}}
+
+
+2024-10-08 10:03:37: Creating generator instance: ./detailed-output/gen-inst-1.param
+2024-10-08 10:03:37: conjure translate-parameter --eprime=./detailed-output/generator.eprime --essence-param=./detailed-output/gen-inst-1.param --eprime-param=./detailed-output/gen-inst-1.eprime-param
+2024-10-08 10:03:37: savilerow ./detailed-output/generator.eprime ./detailed-output/gen-inst-1.eprime-param -out-aux ./detailed-output/gen-inst-1.aux -out-minion ./detailed-output/gen-inst-1.minion -save-symbols -timelimit 300 -S0 -no-bound-vars
+2024-10-08 10:03:38: minion ./detailed-output/gen-inst-1.minion -solsout ./detailed-output/gen-inst-1.solution -randomseed 719061008 -timelimit 5 -varorder domoverwdeg -valorder random
+2024-10-08 10:03:38: savilerow ./detailed-output/generator.eprime -mode ReadSolution -out-aux ./detailed-output/gen-inst-1.aux -out-solution ./detailed-output/gen-inst-1.solution.eprime-param -minion-sol-file ./detailed-output/gen-inst-1.solution
+2024-10-08 10:03:38: conjure translate-solution --eprime=./detailed-output/generator.eprime --essence-param=./detailed-output/gen-inst-1.param --eprime-solution=./detailed-output/gen-inst-1.solution.eprime-param --essence-solution ./detailed-output/gen-inst-1.solution.param
+
+
+2024-10-08 10:03:38: 
+Generator results: genInstance=gen-inst-1, genStatus=sat, genSRTime=0.6619014739990234, genSolverTime=0.07133340835571289
+conjure autoig --remove-aux ./detailed-output/inst-1-719061008.param ./detailed-output/inst-1-719061008.auxRemoved.param
+conjure pretty ./detailed-output/inst-1-719061008.auxRemoved.param --output-format=minizinc
+./detailed-output/inst-1-719061008.dzn generated
+
+
+runsolver -w ./detailed-output/inst-1-719061008.dzn.chuffed.runsolver -d 2 --wall-clock-limit 5 --vsize-limit 8192 minizinc --time-limit 5000 --solver chuffed -i  -f problem.mzn ./detailed-output/inst-1-719061008.dzn --output-mode dzn --output-objective -s
+ERROR: fail to run "runsolver -w ./detailed-output/inst-1-719061008.dzn.chuffed.runsolver -d 2 --wall-clock-limit 5 --vsize-limit 8192 minizinc --time-limit 5000 --solver chuffed -i  -f problem.mzn ./detailed-output/inst-1-719061008.dzn --output-mode dzn --output-objective -s".
+Return code: 1.
+Output is: Error: type error: undefined identifier `a', did you mean `X'?
+
+./detailed-output/inst-1-719061008.dzn:2.1-7
+.
+

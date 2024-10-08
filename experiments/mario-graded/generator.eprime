@@ -1,0 +1,349 @@
+language ESSENCE' 1.0
+
+given num_houses: int(15..100)
+given total_fuel: int(2000..20000)
+given max_distance: int(1..500)
+given max_gold: int(1..100)
+find nbHouses: int(num_houses)
+find fuelMax: int(total_fuel)
+find MarioHouse: int(1..num_houses)
+find LuigiHouse: int(1..num_houses)
+find goldTotalAmount: int(1..max_gold)
+find conso: matrix indexed by [int(1..num_houses), int(1..num_houses)] of int(0..max_distance)
+find goldInHouse: matrix indexed by [int(1..num_houses)] of int(0..max_gold)
+branching on [nbHouses, fuelMax, MarioHouse, LuigiHouse, goldTotalAmount, conso, goldInHouse]
+such that
+    conso[MarioHouse, LuigiHouse] <= total_fuel,
+    goldTotalAmount = sum([goldInHouse[q5] | q5 : int(1..num_houses)]),
+    goldInHouse[MarioHouse] = 0,
+    goldInHouse[LuigiHouse] = 0,
+    MarioHouse != LuigiHouse,
+    and([and([conso[house1, house2] = conso[house2, house1] | house2 : int(1..num_houses)])
+             | house1 : int(1..num_houses)]),
+    and([conso[house, house] = 0 | house : int(1..num_houses)])
+
+$ Conjure's
+$ {"finds":
+$      [{"Name": "nbHouses"}, {"Name": "fuelMax"}, {"Name": "MarioHouse"}, {"Name": "LuigiHouse"},
+$       {"Name": "goldTotalAmount"}, {"Name": "conso"}, {"Name": "goldInHouse"}],
+$  "givens": [{"Name": "num_houses"}, {"Name": "total_fuel"}, {"Name": "max_distance"}, {"Name": "max_gold"}],
+$  "enumGivens": [], "enumLettings": [],
+$  "lettings":
+$      [[{"Name": "houses"},
+$        {"Domain":
+$             {"DomainInt":
+$                  [{"TagInt": []},
+$                   [{"RangeBounded":
+$                         [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                          {"Reference":
+$                               [{"Name": "num_houses"},
+$                                {"DeclNoRepr":
+$                                     ["Given", {"Name": "num_houses"},
+$                                      {"DomainInt":
+$                                           [{"TagInt": []},
+$                                            [{"RangeBounded":
+$                                                  [{"Constant": {"ConstantInt": [{"TagInt": []}, 15]}},
+$                                                   {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]}]]},
+$                                      {"NoRegion": []}]}]}]}]]}}]],
+$  "unnameds": [], "strategyQ": {"PickFirst": []}, "strategyA": {"Compact": []},
+$  "trailCompact":
+$      [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1],
+$       [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1],
+$       [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]],
+$  "nameGenState": [["q", 6]], "nbExtraGivens": 0,
+$  "representations":
+$      [[{"Name": "num_houses"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 15]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}],
+$       [{"Name": "total_fuel"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 2000]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 20000]}}]}]]}],
+$       [{"Name": "max_gold"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}],
+$       [{"Name": "max_distance"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 500]}}]}]]}],
+$       [{"Name": "conso"},
+$        {"DomainMatrix":
+$             [{"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                           {"Reference":
+$                                [{"Name": "num_houses"},
+$                                 {"DeclHasRepr":
+$                                      ["Given", {"Name": "num_houses"},
+$                                       {"DomainInt":
+$                                            [{"TagInt": []},
+$                                             [{"RangeBounded":
+$                                                   [{"Constant": {"ConstantInt": [{"TagInt": []}, 15]}},
+$                                                    {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}]}]}]}]]},
+$              {"DomainMatrix":
+$                   [{"DomainInt":
+$                         [{"TagInt": []},
+$                          [{"RangeBounded":
+$                                [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                 {"Reference":
+$                                      [{"Name": "num_houses"},
+$                                       {"DeclHasRepr":
+$                                            ["Given", {"Name": "num_houses"},
+$                                             {"DomainInt":
+$                                                  [{"TagInt": []},
+$                                                   [{"RangeBounded":
+$                                                         [{"Constant": {"ConstantInt": [{"TagInt": []}, 15]}},
+$                                                          {"Constant":
+$                                                               {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}]}]}]}]]},
+$                    {"DomainInt":
+$                         [{"TagInt": []},
+$                          [{"RangeBounded":
+$                                [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                                 {"Reference":
+$                                      [{"Name": "max_distance"},
+$                                       {"DeclHasRepr":
+$                                            ["Given", {"Name": "max_distance"},
+$                                             {"DomainInt":
+$                                                  [{"TagInt": []},
+$                                                   [{"RangeBounded":
+$                                                         [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                          {"Constant":
+$                                                               {"ConstantInt":
+$                                                                    [{"TagInt": []}, 500]}}]}]]}]}]}]}]]}]}]}],
+$       [{"Name": "MarioHouse"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference":
+$                          [{"Name": "num_houses"},
+$                           {"DeclHasRepr":
+$                                ["Given", {"Name": "num_houses"},
+$                                 {"DomainInt":
+$                                      [{"TagInt": []},
+$                                       [{"RangeBounded":
+$                                             [{"Constant": {"ConstantInt": [{"TagInt": []}, 15]}},
+$                                              {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}]}]}]}]]}],
+$       [{"Name": "LuigiHouse"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference":
+$                          [{"Name": "num_houses"},
+$                           {"DeclHasRepr":
+$                                ["Given", {"Name": "num_houses"},
+$                                 {"DomainInt":
+$                                      [{"TagInt": []},
+$                                       [{"RangeBounded":
+$                                             [{"Constant": {"ConstantInt": [{"TagInt": []}, 15]}},
+$                                              {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}]}]}]}]]}],
+$       [{"Name": "goldTotalAmount"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference":
+$                          [{"Name": "max_gold"},
+$                           {"DeclHasRepr":
+$                                ["Given", {"Name": "max_gold"},
+$                                 {"DomainInt":
+$                                      [{"TagInt": []},
+$                                       [{"RangeBounded":
+$                                             [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                              {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}]}]}]}]]}],
+$       [{"Name": "goldInHouse"},
+$        {"DomainMatrix":
+$             [{"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                           {"Reference":
+$                                [{"Name": "num_houses"},
+$                                 {"DeclHasRepr":
+$                                      ["Given", {"Name": "num_houses"},
+$                                       {"DomainInt":
+$                                            [{"TagInt": []},
+$                                             [{"RangeBounded":
+$                                                   [{"Constant": {"ConstantInt": [{"TagInt": []}, 15]}},
+$                                                    {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}]}]}]}]]},
+$              {"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                           {"Reference":
+$                                [{"Name": "max_gold"},
+$                                 {"DeclHasRepr":
+$                                      ["Given", {"Name": "max_gold"},
+$                                       {"DomainInt":
+$                                            [{"TagInt": []},
+$                                             [{"RangeBounded":
+$                                                   [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                    {"Constant":
+$                                                         {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}]}]}]}]]}]}],
+$       [{"Name": "nbHouses"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Reference":
+$                          [{"Name": "num_houses"},
+$                           {"DeclHasRepr":
+$                                ["Given", {"Name": "num_houses"},
+$                                 {"DomainInt":
+$                                      [{"TagInt": []},
+$                                       [{"RangeBounded":
+$                                             [{"Constant": {"ConstantInt": [{"TagInt": []}, 15]}},
+$                                              {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}]}]},
+$                     {"Reference":
+$                          [{"Name": "num_houses"},
+$                           {"DeclHasRepr":
+$                                ["Given", {"Name": "num_houses"},
+$                                 {"DomainInt":
+$                                      [{"TagInt": []},
+$                                       [{"RangeBounded":
+$                                             [{"Constant": {"ConstantInt": [{"TagInt": []}, 15]}},
+$                                              {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}]}]}]}]]}],
+$       [{"Name": "fuelMax"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Reference":
+$                          [{"Name": "total_fuel"},
+$                           {"DeclHasRepr":
+$                                ["Given", {"Name": "total_fuel"},
+$                                 {"DomainInt":
+$                                      [{"TagInt": []},
+$                                       [{"RangeBounded":
+$                                             [{"Constant": {"ConstantInt": [{"TagInt": []}, 2000]}},
+$                                              {"Constant": {"ConstantInt": [{"TagInt": []}, 20000]}}]}]]}]}]},
+$                     {"Reference":
+$                          [{"Name": "total_fuel"},
+$                           {"DeclHasRepr":
+$                                ["Given", {"Name": "total_fuel"},
+$                                 {"DomainInt":
+$                                      [{"TagInt": []},
+$                                       [{"RangeBounded":
+$                                             [{"Constant": {"ConstantInt": [{"TagInt": []}, 2000]}},
+$                                              {"Constant": {"ConstantInt": [{"TagInt": []}, 20000]}}]}]]}]}]}]}]]}]],
+$  "representationsTree":
+$      [[{"Name": "LuigiHouse"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "MarioHouse"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "conso"},
+$        [{"rootLabel": null, "subForest": [{"rootLabel": null, "subForest": [{"rootLabel": null, "subForest": []}]}]}]],
+$       [{"Name": "fuelMax"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "goldInHouse"}, [{"rootLabel": null, "subForest": [{"rootLabel": null, "subForest": []}]}]],
+$       [{"Name": "goldTotalAmount"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "max_distance"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "max_gold"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "nbHouses"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "num_houses"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "total_fuel"}, [{"rootLabel": null, "subForest": []}]]],
+$  "originalDomains":
+$      [[{"Name": "num_houses"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 15]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}],
+$       [{"Name": "total_fuel"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 2000]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 20000]}}]}]]}],
+$       [{"Name": "max_distance"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 500]}}]}]]}],
+$       [{"Name": "max_gold"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}],
+$       [{"Name": "nbHouses"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Reference": [{"Name": "num_houses"}, null]}, {"Reference": [{"Name": "num_houses"}, null]}]}]]}],
+$       [{"Name": "fuelMax"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Reference": [{"Name": "total_fuel"}, null]}, {"Reference": [{"Name": "total_fuel"}, null]}]}]]}],
+$       [{"Name": "MarioHouse"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference": [{"Name": "num_houses"}, null]}]}]]}],
+$       [{"Name": "LuigiHouse"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference": [{"Name": "num_houses"}, null]}]}]]}],
+$       [{"Name": "goldTotalAmount"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference": [{"Name": "max_gold"}, null]}]}]]}],
+$       [{"Name": "conso"},
+$        {"DomainMatrix":
+$             [{"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                           {"Reference": [{"Name": "num_houses"}, null]}]}]]},
+$              {"DomainMatrix":
+$                   [{"DomainInt":
+$                         [{"TagInt": []},
+$                          [{"RangeBounded":
+$                                [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                 {"Reference": [{"Name": "num_houses"}, null]}]}]]},
+$                    {"DomainInt":
+$                         [{"TagInt": []},
+$                          [{"RangeBounded":
+$                                [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                                 {"Reference": [{"Name": "max_distance"}, null]}]}]]}]}]}],
+$       [{"Name": "goldInHouse"},
+$        {"DomainMatrix":
+$             [{"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                           {"Reference": [{"Name": "num_houses"}, null]}]}]]},
+$              {"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                           {"Reference": [{"Name": "max_gold"}, null]}]}]]}]}]],
+$  "trailGeneralised":
+$      [[-3713691541128363787, -7540975983285248250], [512083881537736648, 6715996444727623499],
+$       [3752863381506471053, -668646554641183698], [6861827342549470731, 4879169905899890379],
+$       [-1536218201498202840, -6453318488610647075], [-7977029742671809679, 2674920176935475352],
+$       [3397366205369985052, 3252009307594307757], [-3657442969161156978, 6095895774407851239],
+$       [-8314220872947621978, -7744726151913179321], [8153432710385992922, -7891897480151061125],
+$       [8873722491330182822, -6386505486490361881], [-5622551018130247187, -7139189685598224380],
+$       [-2343182024108295307, -1284377767267108818], [6059326254474224480, -6714309039179204799],
+$       [-148706315487833262, 8829884060991702605], [2953913997112748164, -8225937530002647523],
+$       [-4748812400374938372, 3696581009679139068], [6112111889774491045, 3568320710567436192],
+$       [-3874904746861982849, 2726713533840724458], [7134192304728568822, -8124950123744475782],
+$       [7851784430434162115, 4824898304714150672], [8003755074016782968, 3704446701155125874],
+$       [4102361094818717751, -2285846488552860170], [4170442727068361374, 8289509464196372490],
+$       [-1990178756129703220, -654151903836722534]],
+$  "trailVerbose": [], "trailRewrites": []}

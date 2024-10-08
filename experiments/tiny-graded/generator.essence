@@ -1,0 +1,5 @@
+given B: int(1..1000)  $ use a different name to avoid conflict
+
+find b: int(1..1000)
+such that 
+b=B

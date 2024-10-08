@@ -1,0 +1,569 @@
+#------------------------------------------------------------------------------
+# irace: An implementation in R of (Elitist) Iterated Racing
+# Version: 3.4.1.9fcaeaf
+# Copyright (C) 2010-2020
+# Manuel Lopez-Ibanez     <manuel.lopez-ibanez@manchester.ac.uk>
+# Jeremie Dubois-Lacoste  
+# Leslie Perez Caceres    <leslie.perez.caceres@ulb.ac.be>
+#
+# This is free software, and you are welcome to redistribute it under certain
+# conditions.  See the GNU General Public License for details. There is NO
+# WARRANTY; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# irace builds upon previous code from the race package:
+#     race: Racing methods for the selection of the best
+#     Copyright (C) 2003 Mauro Birattari
+#------------------------------------------------------------------------------
+# installed at: /AutoIG/bin/irace
+# called with: --seed 42 --scenario /AutoIG/scripts/scenario.R --parameter-file params.irace --train-instances-file instances --exec-dir ./ --max-experiments 180 --target-runner /AutoIG/scripts/target-runner --debug-level 2
+## irace scenario:
+scenarioFile = "./scenario.txt"
+parameterFile = "/AutoIG/experiments/lot-sizing/params.irace"
+execDir = "/AutoIG/experiments/lot-sizing"
+logFile = "/AutoIG/experiments/lot-sizing/irace.Rdata"
+recoveryFile = NULL
+instances = "dummy"
+initConfigurations = NULL
+trainInstancesDir = ""
+trainInstancesFile = "/AutoIG/experiments/lot-sizing/instances"
+configurationsFile = ""
+forbiddenExps = NULL = expression()
+forbiddenFile = ""
+targetRunner = "/AutoIG/scripts/target-runner"
+targetRunnerRetries = 0
+targetRunnerData = ""
+targetRunnerParallel = NULL
+targetEvaluator = NULL
+maxExperiments = 180
+maxTime = 0
+budgetEstimation = 0.02
+digits = 4
+debugLevel = 2
+nbIterations = 0
+nbExperimentsPerIteration = 0
+sampleInstances = TRUE
+testType = "friedman"
+firstTest = 5
+eachTest = 1
+minNbSurvival = 0
+nbConfigurations = 0
+mu = 5
+confidence = 0.95
+deterministic = FALSE
+seed = 42
+parallel = 0
+loadBalancing = TRUE
+mpi = FALSE
+batchmode = "0"
+softRestart = TRUE
+softRestartThreshold = 1e-04
+testInstancesDir = ""
+testInstancesFile = ""
+testInstances = NULL
+testNbElites = 1
+testIterationElites = FALSE
+elitist = TRUE
+elitistNewInstances = 1
+elitistLimit = 2
+repairConfiguration = function (id, allConfigurations, parameters, digits, nConfsPreviousRaces = 0) {    outputDir <- "./detailed-output/"    configuration <- allConfigurations[id - nConfsPreviousRaces,         ]    require(data.table)    repairModel <- paste(outputDir, "/repair.eprime", sep = "")    if (!file.exists(repairModel))         return(configuration)    start_time <- Sys.time()    originalConfiguration <- configuration    baseFileName <- id    outFile <- paste(outputDir, "/repairout-", baseFileName,         sep = "")    if (file.exists(outFile)) {        configuration <- fread(outFile)        return(configuration)    }    lsParams <- sort(parameters$names)    for (param in lsParams) {        maxParam <- NA        if (endsWith(param, "_min")) {            maxParam <- paste(substr(param, 1, nchar(param) -                 3), "max", sep = "")        }        else if (endsWith(param, "Min")) {            maxParam <- paste(substr(param, 1, nchar(param) -                 3), "Max", sep = "")        }        if (!is.na(maxParam)) {            minVal <- min(configuration[[param]], configuration[[maxParam]])            maxVal <- max(configuration[[param]], configuration[[maxParam]])            configuration[[param]] <- minVal            configuration[[maxParam]] <- maxVal        }    }    paramFile <- paste(outputDir, "/repair-", baseFileName, ".param",         sep = "")    lsLines <- c()    for (paramName in colnames(configuration)) {        if (!(paramName %in% c(".ID.", ".PARENT."))) {            val <- configuration[[paramName]]            lsLines <- c(lsLines, paste("letting", paramName,                 "be", val))        }    }    writeLines(lsLines, con <- file(paramFile))    close(con)    seed <- as.integer(id)    cmd <- paste("conjure solve repair.essence ", paramFile,         " -o ", outputDir, " --use-existing-model repair.eprime ",         " --solver-options \"-timelimit 120 -varorder domoverwdeg -randomiseorder",         "-randomseed", seed, "\"", " --copy-solutions=off")    cat(cmd, "\n")    exitCode <- system(cmd, intern = FALSE, wait = TRUE)    if (exitCode != 0) {        cat("ERROR while repairing configuration \n")        print(configuration)        return(NULL)    }    solutionFile <- paste(outputDir, "/repair-repair-", baseFileName,         "-solution000001.solution", sep = "")    lsLines <- readLines(con <- file(solutionFile))    close(con)    lsLines <- gsub("repaired_", "", lsLines)    lsLines <- lsLines[grep("letting ", lsLines)]    baseTempName <- paste(outputDir, "/repair-repair-", baseFileName,         sep = "")    for (endName in c(".eprime-info", ".eprime-infor", ".eprime-minion",         ".eprime-param", "-solution000001.eprime-solution", "-solution000001.solution")) {        file.remove(paste(baseTempName, endName, sep = ""))    }    file.remove(paramFile)    for (paramName in colnames(configuration)) {        if (!(paramName %in% c(".ID.", ".PARENT."))) {            pattern <- paste("letting ", paramName, " be ", sep = "")            s <- lsLines[grep(pattern, lsLines)]            newVal <- as.integer(trimws(strsplit(s, " be ")[[1]][2]))            configuration[[paramName]] <- newVal        }    }    cat("\nBefore repair: \n")    print(originalConfiguration)    cat("After repair: \n")    print(configuration)    cat("\n")    end_time <- Sys.time()    cat("\nRepairing time: ", round(end_time - start_time, 2),         " seconds\n")    write.csv(configuration, file = outFile, row.names = FALSE)    return(configuration)}
+capping = FALSE
+cappingType = "median"
+boundType = "candidate"
+boundMax = NULL
+boundDigits = 0
+boundPar = 1
+boundAsTimeout = TRUE
+postselection = 0
+aclib = FALSE
+## end of irace scenario
+# --- Parameters Hierarchy ---
+[1] "tuner_nb_item_types"   "tuner_nb_orders_delta" "tuner_nb_periods"      "tuner_inventory_cost" 
+  tuner_nb_item_types tuner_nb_orders_delta      tuner_nb_periods  tuner_inventory_cost 
+                    1                     1                     1                     1 
+  tuner_nb_item_types tuner_nb_orders_delta      tuner_nb_periods  tuner_inventory_cost 
+                   ""                    ""                    ""                    "" 
+              Parameter Level Depends.on
+1   tuner_nb_item_types     1           
+2 tuner_nb_orders_delta     1           
+3      tuner_nb_periods     1           
+4  tuner_inventory_cost     1           
+
+# ------------------------
+$names
+[1] "tuner_nb_item_types"   "tuner_nb_orders_delta" "tuner_nb_periods"      "tuner_inventory_cost" 
+
+$types
+  tuner_nb_item_types tuner_nb_orders_delta      tuner_nb_periods  tuner_inventory_cost 
+                  "i"                   "i"                   "i"                   "i" 
+
+$switches
+      tuner_nb_item_types     tuner_nb_orders_delta          tuner_nb_periods      tuner_inventory_cost 
+  "-tuner_nb_item_types " "-tuner_nb_orders_delta "      "-tuner_nb_periods "  "-tuner_inventory_cost " 
+
+$domain
+$domain$tuner_nb_item_types
+[1]  1 20
+
+$domain$tuner_nb_orders_delta
+[1]  0 10
+
+$domain$tuner_nb_periods
+[1]  1 30
+
+$domain$tuner_inventory_cost
+[1]  1 10
+
+
+$conditions
+$conditions$tuner_nb_item_types
+[1] TRUE
+
+$conditions$tuner_nb_orders_delta
+[1] TRUE
+
+$conditions$tuner_nb_periods
+[1] TRUE
+
+$conditions$tuner_inventory_cost
+[1] TRUE
+
+
+$isFixed
+  tuner_nb_item_types tuner_nb_orders_delta      tuner_nb_periods  tuner_inventory_cost 
+                FALSE                 FALSE                 FALSE                 FALSE 
+
+$transform
+$transform$tuner_nb_item_types
+[1] ""
+
+$transform$tuner_nb_orders_delta
+[1] ""
+
+$transform$tuner_nb_periods
+[1] ""
+
+$transform$tuner_inventory_cost
+[1] ""
+
+
+$depends
+$depends$tuner_nb_item_types
+character(0)
+
+$depends$tuner_nb_orders_delta
+character(0)
+
+$depends$tuner_nb_periods
+character(0)
+
+$depends$tuner_inventory_cost
+character(0)
+
+
+$hierarchy
+  tuner_nb_item_types tuner_nb_orders_delta      tuner_nb_periods  tuner_inventory_cost 
+                    1                     1                     1                     1 
+
+$nbParameters
+[1] 4
+
+$nbFixed
+[1] 0
+
+$nbVariable
+[1] 4
+
+# 2024-10-08 09:26:01 UTC: Parameters have been read
+# 2024-10-08 09:26:01 UTC: Initialization
+# Elitist race
+# Elitist new instances: 1
+# Elitist limit: 2
+# nbIterations: 4
+# minNbSurvival: 4
+# nbParameters: 4
+# seed: 42
+# confidence level: 0.95
+# budget: 180
+# mu: 5
+# deterministic: FALSE
+
+# 2024-10-08 09:26:01 UTC: Iteration 1 of 4
+# experimentsUsedSoFar: 0
+# remainingBudget: 180
+# currentBudget: 45
+# nbConfigurations: 7
+# 2024-10-08 09:26:01 UTC: Sample 7 configurations from uniform distribution
+# 2024-10-08 09:26:01 UTC: Configurations for the race n 1 (elite configurations listed first, then new configurations):
+  .ID. tuner_nb_item_types tuner_nb_orders_delta tuner_nb_periods tuner_inventory_cost .PARENT.
+1    1                  12                     9                4                    8       NA
+2    2                  13                     1                3                    5       NA
+3    3                  16                     8               25                    2       NA
+4    4                  19                     3                5                    8       NA
+5    5                   7                     8               12                    7       NA
+6    6                  16                     2                1                    2       NA
+7    7                  14                    10               17                    7       NA
+# 2024-10-08 09:26:01 UTC: Launch race
+# Markers:
+     x No test is performed.
+     c Configurations are discarded only due to capping.
+     - The test is performed and some configurations are discarded.
+     = The test is performed but no configuration is discarded.
+     ! The test is performed and configurations could be discarded but elite configurations are preserved.
+     . All alive configurations are elite and nothing is discarded
+
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+| |   Instance|      Alive|       Best|      Mean best| Exp so far|  W time|  rho|KenW|  Qvar|
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+# 2024-10-08 09:26:01 UTC: /AutoIG/scripts/target-runner 1 1 1965286212 dummy   -tuner_nb_item_types 12 -tuner_nb_orders_delta 9 -tuner_nb_periods 4 -tuner_inventory_cost 8
+# 2024-10-08 09:26:01 UTC: DONE (1) Elapsed wall-clock seconds: 0.10
+-1 6.66
+# 2024-10-08 09:26:01 UTC: /AutoIG/scripts/target-runner 2 1 1965286212 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 1 -tuner_nb_periods 3 -tuner_inventory_cost 5
+# 2024-10-08 09:26:01 UTC: DONE (2) Elapsed wall-clock seconds: 0.10
+-1 4.64
+# 2024-10-08 09:26:01 UTC: /AutoIG/scripts/target-runner 3 1 1965286212 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 8 -tuner_nb_periods 25 -tuner_inventory_cost 2
+# 2024-10-08 09:26:02 UTC: DONE (3) Elapsed wall-clock seconds: 0.11
+-1 7.5
+# 2024-10-08 09:26:02 UTC: /AutoIG/scripts/target-runner 4 1 1965286212 dummy   -tuner_nb_item_types 19 -tuner_nb_orders_delta 3 -tuner_nb_periods 5 -tuner_inventory_cost 8
+# 2024-10-08 09:26:02 UTC: DONE (4) Elapsed wall-clock seconds: 0.10
+-1 6.64
+# 2024-10-08 09:26:02 UTC: /AutoIG/scripts/target-runner 5 1 1965286212 dummy   -tuner_nb_item_types 7 -tuner_nb_orders_delta 8 -tuner_nb_periods 12 -tuner_inventory_cost 7
+# 2024-10-08 09:26:02 UTC: DONE (5) Elapsed wall-clock seconds: 0.10
+-1 4.62
+# 2024-10-08 09:26:02 UTC: /AutoIG/scripts/target-runner 6 1 1965286212 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 2 -tuner_nb_periods 1 -tuner_inventory_cost 2
+# 2024-10-08 09:26:02 UTC: DONE (6) Elapsed wall-clock seconds: 0.10
+-1 5.4
+# 2024-10-08 09:26:02 UTC: /AutoIG/scripts/target-runner 7 1 1965286212 dummy   -tuner_nb_item_types 14 -tuner_nb_orders_delta 10 -tuner_nb_periods 17 -tuner_inventory_cost 7
+# 2024-10-08 09:26:02 UTC: DONE (7) Elapsed wall-clock seconds: 0.10
+-1 7.27
+|x|          1|          7|          1|   -1.000000000|          7|00:00:00|   NA|  NA|    NA|
+# 2024-10-08 09:26:02 UTC: /AutoIG/scripts/target-runner 1 1 601225362 dummy   -tuner_nb_item_types 12 -tuner_nb_orders_delta 9 -tuner_nb_periods 4 -tuner_inventory_cost 8
+# 2024-10-08 09:26:02 UTC: DONE (1) Elapsed wall-clock seconds: 0.10
+-1 5.47
+# 2024-10-08 09:26:02 UTC: /AutoIG/scripts/target-runner 2 1 601225362 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 1 -tuner_nb_periods 3 -tuner_inventory_cost 5
+# 2024-10-08 09:26:02 UTC: DONE (2) Elapsed wall-clock seconds: 0.10
+-1 1.78
+# 2024-10-08 09:26:02 UTC: /AutoIG/scripts/target-runner 3 1 601225362 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 8 -tuner_nb_periods 25 -tuner_inventory_cost 2
+# 2024-10-08 09:26:02 UTC: DONE (3) Elapsed wall-clock seconds: 0.11
+2 5.11
+# 2024-10-08 09:26:02 UTC: /AutoIG/scripts/target-runner 4 1 601225362 dummy   -tuner_nb_item_types 19 -tuner_nb_orders_delta 3 -tuner_nb_periods 5 -tuner_inventory_cost 8
+# 2024-10-08 09:26:02 UTC: DONE (4) Elapsed wall-clock seconds: 0.11
+2 5.11
+# 2024-10-08 09:26:02 UTC: /AutoIG/scripts/target-runner 5 1 601225362 dummy   -tuner_nb_item_types 7 -tuner_nb_orders_delta 8 -tuner_nb_periods 12 -tuner_inventory_cost 7
+# 2024-10-08 09:26:03 UTC: DONE (5) Elapsed wall-clock seconds: 0.11
+-1 2.06
+# 2024-10-08 09:26:03 UTC: /AutoIG/scripts/target-runner 6 1 601225362 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 2 -tuner_nb_periods 1 -tuner_inventory_cost 2
+# 2024-10-08 09:26:06 UTC: DONE (6) Elapsed wall-clock seconds: 3.03
+-1 2.61
+# 2024-10-08 09:26:06 UTC: /AutoIG/scripts/target-runner 7 1 601225362 dummy   -tuner_nb_item_types 14 -tuner_nb_orders_delta 10 -tuner_nb_periods 17 -tuner_inventory_cost 7
+# 2024-10-08 09:26:11 UTC: DONE (7) Elapsed wall-clock seconds: 5.47
+2 5.11
+|x|          2|          7|          1|   -1.000000000|         14|00:00:09|+0.00|0.50|0.4286|
+# 2024-10-08 09:26:11 UTC: /AutoIG/scripts/target-runner 1 1 510416220 dummy   -tuner_nb_item_types 12 -tuner_nb_orders_delta 9 -tuner_nb_periods 4 -tuner_inventory_cost 8
+# 2024-10-08 09:26:17 UTC: DONE (1) Elapsed wall-clock seconds: 6.18
+2 5.82
+# 2024-10-08 09:26:17 UTC: /AutoIG/scripts/target-runner 2 1 510416220 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 1 -tuner_nb_periods 3 -tuner_inventory_cost 5
+# 2024-10-08 09:26:23 UTC: DONE (2) Elapsed wall-clock seconds: 5.57
+2 5.21
+# 2024-10-08 09:26:23 UTC: /AutoIG/scripts/target-runner 3 1 510416220 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 8 -tuner_nb_periods 25 -tuner_inventory_cost 2
+# 2024-10-08 09:26:28 UTC: DONE (3) Elapsed wall-clock seconds: 5.48
+2 5.1
+# 2024-10-08 09:26:28 UTC: /AutoIG/scripts/target-runner 4 1 510416220 dummy   -tuner_nb_item_types 19 -tuner_nb_orders_delta 3 -tuner_nb_periods 5 -tuner_inventory_cost 8
+# 2024-10-08 09:26:34 UTC: DONE (4) Elapsed wall-clock seconds: 5.48
+2 5.11
+# 2024-10-08 09:26:34 UTC: /AutoIG/scripts/target-runner 5 1 510416220 dummy   -tuner_nb_item_types 7 -tuner_nb_orders_delta 8 -tuner_nb_periods 12 -tuner_inventory_cost 7
+# 2024-10-08 09:26:39 UTC: DONE (5) Elapsed wall-clock seconds: 5.74
+2 5.38
+# 2024-10-08 09:26:39 UTC: /AutoIG/scripts/target-runner 6 1 510416220 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 2 -tuner_nb_periods 1 -tuner_inventory_cost 2
+# 2024-10-08 09:26:45 UTC: DONE (6) Elapsed wall-clock seconds: 5.49
+2 5.13
+# 2024-10-08 09:26:45 UTC: /AutoIG/scripts/target-runner 7 1 510416220 dummy   -tuner_nb_item_types 14 -tuner_nb_orders_delta 10 -tuner_nb_periods 17 -tuner_inventory_cost 7
+# 2024-10-08 09:26:50 UTC: DONE (7) Elapsed wall-clock seconds: 5.48
+2 5.11
+|x|          3|          7|          1|    0.000000000|         21|00:00:39|+0.00|0.33|0.2857|
+# 2024-10-08 09:26:50 UTC: /AutoIG/scripts/target-runner 1 1 1489266180 dummy   -tuner_nb_item_types 12 -tuner_nb_orders_delta 9 -tuner_nb_periods 4 -tuner_inventory_cost 8
+# 2024-10-08 09:26:56 UTC: DONE (1) Elapsed wall-clock seconds: 5.65
+2 5.28
+# 2024-10-08 09:26:56 UTC: /AutoIG/scripts/target-runner 2 1 1489266180 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 1 -tuner_nb_periods 3 -tuner_inventory_cost 5
+# 2024-10-08 09:27:02 UTC: DONE (2) Elapsed wall-clock seconds: 5.62
+2 5.24
+# 2024-10-08 09:27:02 UTC: /AutoIG/scripts/target-runner 3 1 1489266180 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 8 -tuner_nb_periods 25 -tuner_inventory_cost 2
+# 2024-10-08 09:27:07 UTC: DONE (3) Elapsed wall-clock seconds: 5.49
+2 5.11
+# 2024-10-08 09:27:07 UTC: /AutoIG/scripts/target-runner 4 1 1489266180 dummy   -tuner_nb_item_types 19 -tuner_nb_orders_delta 3 -tuner_nb_periods 5 -tuner_inventory_cost 8
+# 2024-10-08 09:27:14 UTC: DONE (4) Elapsed wall-clock seconds: 6.46
+-1 6.09
+# 2024-10-08 09:27:14 UTC: /AutoIG/scripts/target-runner 5 1 1489266180 dummy   -tuner_nb_item_types 7 -tuner_nb_orders_delta 8 -tuner_nb_periods 12 -tuner_inventory_cost 7
+# 2024-10-08 09:27:19 UTC: DONE (5) Elapsed wall-clock seconds: 5.58
+2 5.18
+# 2024-10-08 09:27:19 UTC: /AutoIG/scripts/target-runner 6 1 1489266180 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 2 -tuner_nb_periods 1 -tuner_inventory_cost 2
+# 2024-10-08 09:27:25 UTC: DONE (6) Elapsed wall-clock seconds: 5.70
+2 5.32
+# 2024-10-08 09:27:25 UTC: /AutoIG/scripts/target-runner 7 1 1489266180 dummy   -tuner_nb_item_types 14 -tuner_nb_orders_delta 10 -tuner_nb_periods 17 -tuner_inventory_cost 7
+# 2024-10-08 09:27:30 UTC: DONE (7) Elapsed wall-clock seconds: 5.50
+2 5.11
+|x|          4|          7|          1|   0.5000000000|         28|00:00:40|-0.15|0.14|0.4959|
+# 2024-10-08 09:27:31 UTC: /AutoIG/scripts/target-runner 1 1 1222707704 dummy   -tuner_nb_item_types 12 -tuner_nb_orders_delta 9 -tuner_nb_periods 4 -tuner_inventory_cost 8
+# 2024-10-08 09:27:37 UTC: DONE (1) Elapsed wall-clock seconds: 6.18
+2 5.81
+# 2024-10-08 09:27:37 UTC: /AutoIG/scripts/target-runner 2 1 1222707704 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 1 -tuner_nb_periods 3 -tuner_inventory_cost 5
+# 2024-10-08 09:27:42 UTC: DONE (2) Elapsed wall-clock seconds: 5.51
+2 5.13
+# 2024-10-08 09:27:42 UTC: /AutoIG/scripts/target-runner 3 1 1222707704 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 8 -tuner_nb_periods 25 -tuner_inventory_cost 2
+# 2024-10-08 09:27:48 UTC: DONE (3) Elapsed wall-clock seconds: 5.51
+2 5.13
+# 2024-10-08 09:27:48 UTC: /AutoIG/scripts/target-runner 4 1 1222707704 dummy   -tuner_nb_item_types 19 -tuner_nb_orders_delta 3 -tuner_nb_periods 5 -tuner_inventory_cost 8
+# 2024-10-08 09:27:53 UTC: DONE (4) Elapsed wall-clock seconds: 5.74
+2 5.37
+# 2024-10-08 09:27:53 UTC: /AutoIG/scripts/target-runner 5 1 1222707704 dummy   -tuner_nb_item_types 7 -tuner_nb_orders_delta 8 -tuner_nb_periods 12 -tuner_inventory_cost 7
+# 2024-10-08 09:27:59 UTC: DONE (5) Elapsed wall-clock seconds: 5.51
+2 5.13
+# 2024-10-08 09:27:59 UTC: /AutoIG/scripts/target-runner 6 1 1222707704 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 2 -tuner_nb_periods 1 -tuner_inventory_cost 2
+# 2024-10-08 09:28:05 UTC: DONE (6) Elapsed wall-clock seconds: 5.76
+2 5.39
+# 2024-10-08 09:28:05 UTC: /AutoIG/scripts/target-runner 7 1 1222707704 dummy   -tuner_nb_item_types 14 -tuner_nb_orders_delta 10 -tuner_nb_periods 17 -tuner_inventory_cost 7
+# 2024-10-08 09:28:10 UTC: DONE (7) Elapsed wall-clock seconds: 5.49
+2 5.11
+|=|          5|          7|          1|   0.8000000000|         35|00:00:39|-0.11|0.11|0.3833|
+# 2024-10-08 09:28:10 UTC: /AutoIG/scripts/target-runner 1 1 1068608867 dummy   -tuner_nb_item_types 12 -tuner_nb_orders_delta 9 -tuner_nb_periods 4 -tuner_inventory_cost 8
+# 2024-10-08 09:28:16 UTC: DONE (1) Elapsed wall-clock seconds: 5.63
+2 5.25
+# 2024-10-08 09:28:16 UTC: /AutoIG/scripts/target-runner 2 1 1068608867 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 1 -tuner_nb_periods 3 -tuner_inventory_cost 5
+# 2024-10-08 09:28:21 UTC: DONE (2) Elapsed wall-clock seconds: 5.52
+2 5.14
+# 2024-10-08 09:28:21 UTC: /AutoIG/scripts/target-runner 3 1 1068608867 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 8 -tuner_nb_periods 25 -tuner_inventory_cost 2
+# 2024-10-08 09:28:27 UTC: DONE (3) Elapsed wall-clock seconds: 5.56
+2 5.13
+# 2024-10-08 09:28:27 UTC: /AutoIG/scripts/target-runner 4 1 1068608867 dummy   -tuner_nb_item_types 19 -tuner_nb_orders_delta 3 -tuner_nb_periods 5 -tuner_inventory_cost 8
+# 2024-10-08 09:28:33 UTC: DONE (4) Elapsed wall-clock seconds: 6.49
+2 6.1
+# 2024-10-08 09:28:33 UTC: /AutoIG/scripts/target-runner 5 1 1068608867 dummy   -tuner_nb_item_types 7 -tuner_nb_orders_delta 8 -tuner_nb_periods 12 -tuner_inventory_cost 7
+# 2024-10-08 09:28:39 UTC: DONE (5) Elapsed wall-clock seconds: 5.48
+2 5.11
+# 2024-10-08 09:28:39 UTC: /AutoIG/scripts/target-runner 6 1 1068608867 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 2 -tuner_nb_periods 1 -tuner_inventory_cost 2
+# 2024-10-08 09:28:44 UTC: DONE (6) Elapsed wall-clock seconds: 5.57
+2 5.18
+# 2024-10-08 09:28:44 UTC: /AutoIG/scripts/target-runner 7 1 1068608867 dummy   -tuner_nb_item_types 14 -tuner_nb_orders_delta 10 -tuner_nb_periods 17 -tuner_inventory_cost 7
+# 2024-10-08 09:28:50 UTC: DONE (7) Elapsed wall-clock seconds: 5.47
+2 5.1
+|=|          6|          7|          1|    1.000000000|         42|00:00:39|-0.09|0.09|0.3127|
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+# Stopped because experiments for next test (49) > max experiments (45)
+Best-so-far configuration:           1    mean value:     1.000000000
+Description of the best-so-far configuration:
+  .ID. tuner_nb_item_types tuner_nb_orders_delta tuner_nb_periods tuner_inventory_cost .PARENT.
+1    1                  12                     9                4                    8       NA
+
+# 2024-10-08 09:28:50 UTC: Extracting elites
+# 2024-10-08 09:28:50 UTC: Elite configurations (first number is the configuration ID; listed from best to worst according to the sum of ranks):
+  .ID. tuner_nb_item_types tuner_nb_orders_delta tuner_nb_periods tuner_inventory_cost .PARENT. .ALIVE. .RANK. .WEIGHT.
+1    1                  12                     9                4                    8       NA    TRUE     23      0.4
+2    2                  13                     1                3                    5       NA    TRUE     23      0.3
+4    4                  19                     3                5                    8       NA    TRUE     23      0.2
+5    5                   7                     8               12                    7       NA    TRUE     23      0.1
+# 2024-10-08 09:28:50 UTC: Initialise model
+# 2024-10-08 09:28:50 UTC: End of iteration 1
+# 2024-10-08 09:28:50 UTC: Iteration 2 of 4
+# experimentsUsedSoFar: 42
+# remainingBudget: 138
+# currentBudget: 46
+# nbConfigurations: 10
+# 2024-10-08 09:28:50 UTC: Update model
+# Model:
+$tuner_nb_item_types
+$tuner_nb_item_types$`1`
+[1]  6.069959 12.000000
+
+$tuner_nb_item_types$`2`
+[1]  6.069959 13.000000
+
+$tuner_nb_item_types$`4`
+[1]  6.069959 19.000000
+
+$tuner_nb_item_types$`5`
+[1] 6.069959 7.000000
+
+
+$tuner_nb_orders_delta
+$tuner_nb_orders_delta$`1`
+[1] 3.194716 9.000000
+
+$tuner_nb_orders_delta$`2`
+[1] 3.194716 1.000000
+
+$tuner_nb_orders_delta$`4`
+[1] 3.194716 3.000000
+
+$tuner_nb_orders_delta$`5`
+[1] 3.194716 8.000000
+
+
+$tuner_nb_periods
+$tuner_nb_periods$`1`
+[1] 9.264675 4.000000
+
+$tuner_nb_periods$`2`
+[1] 9.264675 3.000000
+
+$tuner_nb_periods$`4`
+[1] 9.264675 5.000000
+
+$tuner_nb_periods$`5`
+[1]  9.264675 12.000000
+
+
+$tuner_inventory_cost
+$tuner_inventory_cost$`1`
+[1] 2.875244 8.000000
+
+$tuner_inventory_cost$`2`
+[1] 2.875244 5.000000
+
+$tuner_inventory_cost$`4`
+[1] 2.875244 8.000000
+
+$tuner_inventory_cost$`5`
+[1] 2.875244 7.000000
+
+
+# 2024-10-08 09:28:50 UTC: Sample 6 configurations from model
+# 2024-10-08 09:28:50 UTC: Computing similarity of configurations .......... DONE
+# 2024-10-08 09:28:50 UTC: Configurations for the race n 2 (elite configurations listed first, then new configurations):
+   .ID. tuner_nb_item_types tuner_nb_orders_delta tuner_nb_periods tuner_inventory_cost .PARENT.
+1     1                  12                     9                4                    8       NA
+2     2                  13                     1                3                    5       NA
+4     4                  19                     3                5                    8       NA
+5     5                   7                     8               12                    7       NA
+8     8                  13                     9               10                    7        1
+9     9                   6                     2               10                    8        2
+10   10                  16                     5                5                   10        1
+11   11                  19                     3                4                    8        4
+12   12                  13                     8                3                    9        1
+13   13                   7                     7               11                    2        2
+# 2024-10-08 09:28:50 UTC: Launch race
+# Markers:
+     x No test is performed.
+     c Configurations are discarded only due to capping.
+     - The test is performed and some configurations are discarded.
+     = The test is performed but no configuration is discarded.
+     ! The test is performed and configurations could be discarded but elite configurations are preserved.
+     . All alive configurations are elite and nothing is discarded
+
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+| |   Instance|      Alive|       Best|      Mean best| Exp so far|  W time|  rho|KenW|  Qvar|
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+# 2024-10-08 09:28:50 UTC: /AutoIG/scripts/target-runner 1 1 735527639 dummy   -tuner_nb_item_types 12 -tuner_nb_orders_delta 9 -tuner_nb_periods 4 -tuner_inventory_cost 8
+# 2024-10-08 09:28:56 UTC: DONE (1) Elapsed wall-clock seconds: 5.62
+2 5.25
+# 2024-10-08 09:28:56 UTC: /AutoIG/scripts/target-runner 2 1 735527639 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 1 -tuner_nb_periods 3 -tuner_inventory_cost 5
+# 2024-10-08 09:29:01 UTC: DONE (2) Elapsed wall-clock seconds: 5.48
+2 5.12
+# 2024-10-08 09:29:01 UTC: /AutoIG/scripts/target-runner 4 1 735527639 dummy   -tuner_nb_item_types 19 -tuner_nb_orders_delta 3 -tuner_nb_periods 5 -tuner_inventory_cost 8
+# 2024-10-08 09:29:07 UTC: DONE (4) Elapsed wall-clock seconds: 5.59
+2 5.21
+# 2024-10-08 09:29:07 UTC: /AutoIG/scripts/target-runner 5 1 735527639 dummy   -tuner_nb_item_types 7 -tuner_nb_orders_delta 8 -tuner_nb_periods 12 -tuner_inventory_cost 7
+# 2024-10-08 09:29:12 UTC: DONE (5) Elapsed wall-clock seconds: 5.49
+2 5.12
+# 2024-10-08 09:29:12 UTC: /AutoIG/scripts/target-runner 8 1 735527639 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 9 -tuner_nb_periods 10 -tuner_inventory_cost 7
+# 2024-10-08 09:29:20 UTC: DONE (8) Elapsed wall-clock seconds: 7.33
+-1 6.95
+# 2024-10-08 09:29:20 UTC: /AutoIG/scripts/target-runner 9 1 735527639 dummy   -tuner_nb_item_types 6 -tuner_nb_orders_delta 2 -tuner_nb_periods 10 -tuner_inventory_cost 8
+# 2024-10-08 09:29:23 UTC: DONE (9) Elapsed wall-clock seconds: 3.88
+-1 3.48
+# 2024-10-08 09:29:23 UTC: /AutoIG/scripts/target-runner 10 1 735527639 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 5 -tuner_nb_periods 5 -tuner_inventory_cost 10
+# 2024-10-08 09:29:30 UTC: DONE (10) Elapsed wall-clock seconds: 6.69
+-1 6.31
+# 2024-10-08 09:29:30 UTC: /AutoIG/scripts/target-runner 11 1 735527639 dummy   -tuner_nb_item_types 19 -tuner_nb_orders_delta 3 -tuner_nb_periods 4 -tuner_inventory_cost 8
+# 2024-10-08 09:29:37 UTC: DONE (11) Elapsed wall-clock seconds: 7.08
+-1 6.68
+# 2024-10-08 09:29:37 UTC: /AutoIG/scripts/target-runner 12 1 735527639 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 8 -tuner_nb_periods 3 -tuner_inventory_cost 9
+# 2024-10-08 09:29:44 UTC: DONE (12) Elapsed wall-clock seconds: 6.70
+-1 6.32
+# 2024-10-08 09:29:44 UTC: /AutoIG/scripts/target-runner 13 1 735527639 dummy   -tuner_nb_item_types 7 -tuner_nb_orders_delta 7 -tuner_nb_periods 11 -tuner_inventory_cost 2
+# 2024-10-08 09:29:49 UTC: DONE (13) Elapsed wall-clock seconds: 5.04
+-1 4.64
+|x|          7|         10|          8|   -1.000000000|         10|00:00:58|   NA|  NA|    NA|
+# 2024-10-08 09:29:49 UTC: /AutoIG/scripts/target-runner 8 1 1222707704 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 9 -tuner_nb_periods 10 -tuner_inventory_cost 7
+# 2024-10-08 09:29:55 UTC: DONE (8) Elapsed wall-clock seconds: 5.60
+2 5.17
+# 2024-10-08 09:29:55 UTC: /AutoIG/scripts/target-runner 9 1 1222707704 dummy   -tuner_nb_item_types 6 -tuner_nb_orders_delta 2 -tuner_nb_periods 10 -tuner_inventory_cost 8
+# 2024-10-08 09:29:57 UTC: DONE (9) Elapsed wall-clock seconds: 2.74
+-1 2.11
+# 2024-10-08 09:29:57 UTC: /AutoIG/scripts/target-runner 10 1 1222707704 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 5 -tuner_nb_periods 5 -tuner_inventory_cost 10
+# 2024-10-08 09:30:03 UTC: DONE (10) Elapsed wall-clock seconds: 5.59
+2 5.17
+# 2024-10-08 09:30:03 UTC: /AutoIG/scripts/target-runner 11 1 1222707704 dummy   -tuner_nb_item_types 19 -tuner_nb_orders_delta 3 -tuner_nb_periods 4 -tuner_inventory_cost 8
+# 2024-10-08 09:30:08 UTC: DONE (11) Elapsed wall-clock seconds: 5.61
+2 5.12
+# 2024-10-08 09:30:08 UTC: /AutoIG/scripts/target-runner 12 1 1222707704 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 8 -tuner_nb_periods 3 -tuner_inventory_cost 9
+# 2024-10-08 09:30:14 UTC: DONE (12) Elapsed wall-clock seconds: 5.55
+2 5.17
+# 2024-10-08 09:30:14 UTC: /AutoIG/scripts/target-runner 13 1 1222707704 dummy   -tuner_nb_item_types 7 -tuner_nb_orders_delta 7 -tuner_nb_periods 11 -tuner_inventory_cost 2
+# 2024-10-08 09:30:17 UTC: DONE (13) Elapsed wall-clock seconds: 2.69
+-1 2.29
+|x|          5|         10|          9|   -1.000000000|         16|00:00:27|+0.40|0.70|0.5326|
+# 2024-10-08 09:30:17 UTC: /AutoIG/scripts/target-runner 8 1 510416220 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 9 -tuner_nb_periods 10 -tuner_inventory_cost 7
+# 2024-10-08 09:30:22 UTC: DONE (8) Elapsed wall-clock seconds: 5.53
+2 5.12
+# 2024-10-08 09:30:22 UTC: /AutoIG/scripts/target-runner 9 1 510416220 dummy   -tuner_nb_item_types 6 -tuner_nb_orders_delta 2 -tuner_nb_periods 10 -tuner_inventory_cost 8
+# 2024-10-08 09:30:25 UTC: DONE (9) Elapsed wall-clock seconds: 2.51
+-1 2.12
+# 2024-10-08 09:30:25 UTC: /AutoIG/scripts/target-runner 10 1 510416220 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 5 -tuner_nb_periods 5 -tuner_inventory_cost 10
+# 2024-10-08 09:30:30 UTC: DONE (10) Elapsed wall-clock seconds: 5.71
+-1 5.29
+# 2024-10-08 09:30:30 UTC: /AutoIG/scripts/target-runner 11 1 510416220 dummy   -tuner_nb_item_types 19 -tuner_nb_orders_delta 3 -tuner_nb_periods 4 -tuner_inventory_cost 8
+# 2024-10-08 09:30:36 UTC: DONE (11) Elapsed wall-clock seconds: 5.51
+2 5.11
+# 2024-10-08 09:30:36 UTC: /AutoIG/scripts/target-runner 12 1 510416220 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 8 -tuner_nb_periods 3 -tuner_inventory_cost 9
+# 2024-10-08 09:30:42 UTC: DONE (12) Elapsed wall-clock seconds: 5.55
+-1 5.17
+# 2024-10-08 09:30:42 UTC: /AutoIG/scripts/target-runner 13 1 510416220 dummy   -tuner_nb_item_types 7 -tuner_nb_orders_delta 7 -tuner_nb_periods 11 -tuner_inventory_cost 2
+# 2024-10-08 09:30:47 UTC: DONE (13) Elapsed wall-clock seconds: 5.68
+2 5.31
+|x|          3|         10|          9|   -1.000000000|         22|00:00:30|+0.39|0.60|0.5517|
+# 2024-10-08 09:30:47 UTC: /AutoIG/scripts/target-runner 8 1 601225362 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 9 -tuner_nb_periods 10 -tuner_inventory_cost 7
+# 2024-10-08 09:30:53 UTC: DONE (8) Elapsed wall-clock seconds: 5.50
+2 5.11
+# 2024-10-08 09:30:53 UTC: /AutoIG/scripts/target-runner 9 1 601225362 dummy   -tuner_nb_item_types 6 -tuner_nb_orders_delta 2 -tuner_nb_periods 10 -tuner_inventory_cost 8
+# 2024-10-08 09:30:56 UTC: DONE (9) Elapsed wall-clock seconds: 2.87
+-1 2.49
+# 2024-10-08 09:30:56 UTC: /AutoIG/scripts/target-runner 10 1 601225362 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 5 -tuner_nb_periods 5 -tuner_inventory_cost 10
+# 2024-10-08 09:31:01 UTC: DONE (10) Elapsed wall-clock seconds: 5.79
+2 5.39
+# 2024-10-08 09:31:01 UTC: /AutoIG/scripts/target-runner 11 1 601225362 dummy   -tuner_nb_item_types 19 -tuner_nb_orders_delta 3 -tuner_nb_periods 4 -tuner_inventory_cost 8
+# 2024-10-08 09:31:07 UTC: DONE (11) Elapsed wall-clock seconds: 5.48
+2 5.11
+# 2024-10-08 09:31:07 UTC: /AutoIG/scripts/target-runner 12 1 601225362 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 8 -tuner_nb_periods 3 -tuner_inventory_cost 9
+# 2024-10-08 09:31:13 UTC: DONE (12) Elapsed wall-clock seconds: 6.17
+2 5.79
+# 2024-10-08 09:31:13 UTC: /AutoIG/scripts/target-runner 13 1 601225362 dummy   -tuner_nb_item_types 7 -tuner_nb_orders_delta 7 -tuner_nb_periods 11 -tuner_inventory_cost 2
+# 2024-10-08 09:31:19 UTC: DONE (13) Elapsed wall-clock seconds: 5.51
+2 5.13
+|x|          2|         10|          9|   -1.000000000|         28|00:00:31|+0.08|0.31|0.8114|
+# 2024-10-08 09:31:19 UTC: /AutoIG/scripts/target-runner 8 1 1489266180 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 9 -tuner_nb_periods 10 -tuner_inventory_cost 7
+# 2024-10-08 09:31:25 UTC: DONE (8) Elapsed wall-clock seconds: 6.71
+-1 6.34
+# 2024-10-08 09:31:25 UTC: /AutoIG/scripts/target-runner 9 1 1489266180 dummy   -tuner_nb_item_types 6 -tuner_nb_orders_delta 2 -tuner_nb_periods 10 -tuner_inventory_cost 8
+# 2024-10-08 09:31:28 UTC: DONE (9) Elapsed wall-clock seconds: 3.08
+-1 2.68
+# 2024-10-08 09:31:28 UTC: /AutoIG/scripts/target-runner 10 1 1489266180 dummy   -tuner_nb_item_types 16 -tuner_nb_orders_delta 5 -tuner_nb_periods 5 -tuner_inventory_cost 10
+# 2024-10-08 09:31:37 UTC: DONE (10) Elapsed wall-clock seconds: 8.48
+2 8.08
+# 2024-10-08 09:31:37 UTC: /AutoIG/scripts/target-runner 11 1 1489266180 dummy   -tuner_nb_item_types 19 -tuner_nb_orders_delta 3 -tuner_nb_periods 4 -tuner_inventory_cost 8
+# 2024-10-08 09:31:44 UTC: DONE (11) Elapsed wall-clock seconds: 6.94
+-1 6.57
+# 2024-10-08 09:31:44 UTC: /AutoIG/scripts/target-runner 12 1 1489266180 dummy   -tuner_nb_item_types 13 -tuner_nb_orders_delta 8 -tuner_nb_periods 3 -tuner_inventory_cost 9
+# 2024-10-08 09:31:50 UTC: DONE (12) Elapsed wall-clock seconds: 5.89
+2 5.48
+# 2024-10-08 09:31:50 UTC: /AutoIG/scripts/target-runner 13 1 1489266180 dummy   -tuner_nb_item_types 7 -tuner_nb_orders_delta 7 -tuner_nb_periods 11 -tuner_inventory_cost 2
+# 2024-10-08 09:31:54 UTC: DONE (13) Elapsed wall-clock seconds: 4.54
+
+/AutoIG/experiments/lot-sizing/detailed-output /AutoIG/experiments/lot-sizing
+/AutoIG/experiments/lot-sizing
+
+
+Total #runs: 75
+Total #instances generated: 27
+
+#graded instances: 27 (/27 runs)
+
+Info of graded instances is saved to /AutoIG/experiments/lot-sizing/graded-instances-info.csv

@@ -1,0 +1,13 @@
+2024-10-07 20:32:02: /AutoIG/scripts/wrapper.py 8 1 61910261 dummy -num_houses 84 -total_fuel 14509 -max_distance 219 -max_gold 37
+{'generalSettings': {'experimentType': 'graded', 'modelFile': '/AutoIG/data/models/mario/problem.mzn', 'generatorFile': '/AutoIG/data/models/mario/generator.essence', 'runDir': '/AutoIG/experiments/mario-graded'}, 'generatorSettings': {'genSRTimeLimit': 300, 'genSRFlags': '-S0 -no-bound-vars', 'genSolver': 'minion', 'genSolverTimeLimit': '5', 'genSolverFlags': '-varorder domoverwdeg -valorder random'}, 'evaluationSettings': {'nEvaluations': 1, 'gradedTypes': 'all', 'solver': 'chuffed', 'solverType': 'complete', 'minTime': 0, 'solverFlags': '-f', 'totalTimeLimit': 5}}
+
+
+2024-10-07 20:32:02: Creating generator instance: ./detailed-output/gen-inst-8.param
+2024-10-07 20:32:02: minion ./detailed-output/gen-inst-8.minion -solsout ./detailed-output/gen-inst-8.solution -randomseed 61910261 -timelimit 5 -varorder domoverwdeg -valorder random
+
+
+2024-10-07 20:32:08: 
+Generator results: genInstance=gen-inst-8, genStatus=solverTimeOut, genSRTime=0, genSolverTime=6.074535369873047
+No instance file generated. Exitting...
+{'totalTime': 6.084317684173584, 'genResults': {'instance': 'gen-inst-8.param', 'status': 'solverTimeOut', 'seed': 61910261, 'SRTime': 0, 'solverTime': 6.074535369873047}, 'instanceResults': {}, 'status': 'gensolverTimeOut', 'score': 2}
+2 6.08

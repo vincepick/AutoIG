@@ -1,0 +1,22 @@
+2024-10-08 09:51:31: /AutoIG/scripts/wrapper.py 1 1 1965286212 dummy -flour_gen 3319 -banana_gen 9 -sugar_gen 784 -butter_gen 788 -cocoa_gen 661
+{'generalSettings': {'experimentType': 'graded', 'modelFile': '/AutoIG/data/models/cake/cake.mzn', 'generatorFile': '/AutoIG/data/models/cake/cake_gen.essence', 'runDir': '/AutoIG/experiments/cake-graded'}, 'generatorSettings': {'genSRTimeLimit': 300, 'genSRFlags': '-S0 -no-bound-vars', 'genSolver': 'minion', 'genSolverTimeLimit': '5', 'genSolverFlags': '-varorder domoverwdeg -valorder random'}, 'evaluationSettings': {'nEvaluations': 1, 'gradedTypes': 'all', 'solver': 'chuffed', 'solverType': 'complete', 'minTime': 0, 'solverFlags': '-f', 'totalTimeLimit': 5}}
+
+
+2024-10-08 09:51:31: Creating generator instance: ./detailed-output/gen-inst-1.param
+2024-10-08 09:51:31: minion ./detailed-output/gen-inst-1.minion -solsout ./detailed-output/gen-inst-1.solution -randomseed 1965286212 -timelimit 5 -varorder domoverwdeg -valorder random
+2024-10-08 09:51:32: savilerow ./detailed-output/generator.eprime -mode ReadSolution -out-aux ./detailed-output/gen-inst-1.aux -out-solution ./detailed-output/gen-inst-1.solution.eprime-param -minion-sol-file ./detailed-output/gen-inst-1.solution
+2024-10-08 09:51:32: conjure translate-solution --eprime=./detailed-output/generator.eprime --essence-param=./detailed-output/gen-inst-1.param --eprime-solution=./detailed-output/gen-inst-1.solution.eprime-param --essence-solution ./detailed-output/gen-inst-1.solution.param
+Traceback (most recent call last):
+  File "/AutoIG/scripts/wrapper.py", line 1096, in <module>
+    main()
+  File "/AutoIG/scripts/wrapper.py", line 975, in main
+    ) = solve_generator(
+        ^^^^^^^^^^^^^^^^
+  File "/AutoIG/scripts/generator.py", line 91, in solve_generator
+    conjure_translate_solution(
+  File "/AutoIG/scripts/essence_pipeline_utils.py", line 164, in conjure_translate_solution
+    raise Exception(cmdOutput)
+Exception: Error:
+    Missing values for parameters:
+        flour_capacity_gen, bananas_capacity_gen, sugar_capacity_gen, butter_capacity_gen, cocoa_capacity_gen
+

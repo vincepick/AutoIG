@@ -1,0 +1,21 @@
+2024-10-08 09:30:36: /AutoIG/scripts/wrapper.py 12 1 510416220 dummy -tuner_nb_item_types 13 -tuner_nb_orders_delta 8 -tuner_nb_periods 3 -tuner_inventory_cost 9
+{'generalSettings': {'experimentType': 'graded', 'modelFile': '/AutoIG/data/models/lot-sizing/problem.mzn', 'generatorFile': '/AutoIG/data/models/lot-sizing/generator.essence', 'runDir': '/AutoIG/experiments/lot-sizing'}, 'generatorSettings': {'genSRTimeLimit': 300, 'genSRFlags': '-S0 -no-bound-vars', 'genSolver': 'minion', 'genSolverTimeLimit': '5', 'genSolverFlags': '-varorder domoverwdeg -valorder random'}, 'evaluationSettings': {'nEvaluations': 1, 'gradedTypes': 'all', 'solver': 'chuffed', 'solverType': 'complete', 'minTime': 0, 'solverFlags': '-f', 'totalTimeLimit': 5}}
+
+
+2024-10-08 09:30:36: Creating generator instance: ./detailed-output/gen-inst-12.param
+2024-10-08 09:30:36: minion ./detailed-output/gen-inst-12.minion -solsout ./detailed-output/gen-inst-12.solution -randomseed 510416220 -timelimit 5 -varorder domoverwdeg -valorder random
+2024-10-08 09:30:41: savilerow ./detailed-output/generator.eprime -mode ReadSolution -out-aux ./detailed-output/gen-inst-12.aux -out-solution ./detailed-output/gen-inst-12.solution.eprime-param -minion-sol-file ./detailed-output/gen-inst-12.solution
+2024-10-08 09:30:41: conjure translate-solution --eprime=./detailed-output/generator.eprime --essence-param=./detailed-output/gen-inst-12.param --eprime-solution=./detailed-output/gen-inst-12.solution.eprime-param --essence-solution ./detailed-output/gen-inst-12.solution.param
+
+
+2024-10-08 09:30:41: 
+Generator results: genInstance=gen-inst-12, genStatus=sat, genSRTime=0, genSolverTime=3.5922391414642334
+conjure autoig --remove-aux ./detailed-output/inst-12-510416220.param ./detailed-output/inst-12-510416220.auxRemoved.param
+conjure pretty ./detailed-output/inst-12-510416220.auxRemoved.param --output-format=minizinc
+./detailed-output/inst-12-510416220.dzn generated
+
+
+runsolver -w ./detailed-output/inst-12-510416220.dzn.chuffed.runsolver -d 2 --wall-clock-limit 5 --vsize-limit 8192 minizinc --time-limit 5000 --solver chuffed -i  -f problem.mzn ./detailed-output/inst-12-510416220.dzn --output-mode dzn --output-objective -s
+C 0.36396050453186035 {'objs': [], 'flattenStatus': 'ok', 'flattenTime': 0.188459, 'instanceType': 'unsat', 'answerStatus': 'unknown'}
+{'totalTime': 5.1743457317352295, 'genResults': {'instance': 'gen-inst-12.param', 'status': 'sat', 'seed': 510416220, 'SRTime': 0, 'solverTime': 3.5922391414642334}, 'instanceResults': {'instance': './detailed-output/inst-12-510416220.dzn', 'status': 'ok', 'score': -1, 'results': {'main': {'runs': [{'seed': None, 'status': 'C', 'time': 0.36396050453186035, 'extra': {'objs': [], 'flattenStatus': 'ok', 'flattenTime': 0.188459, 'instanceType': 'unsat', 'answerStatus': 'unknown'}}]}, 'oracle': {'runs': []}}}, 'status': 'ok', 'score': -1}
+-1 5.17

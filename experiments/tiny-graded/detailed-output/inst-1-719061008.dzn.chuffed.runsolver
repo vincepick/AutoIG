@@ -1,0 +1,89 @@
+runsolver version 3.4.0 (svn: 3018) Copyright (C) 2010-2013 Olivier ROUSSEL
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+command line: runsolver -w ./detailed-output/inst-1-719061008.dzn.chuffed.runsolver -d 2 --wall-clock-limit 5 --vsize-limit 8192 minizinc --time-limit 5000 --solver chuffed -f problem.mzn ./detailed-output/inst-1-719061008.dzn --output-mode dzn -s 
+
+running on 10 cores: 0-9
+
+Enforcing wall clock limit (soft limit, will send SIGTERM then SIGKILL): 5 seconds
+Enforcing VSIZE limit (soft limit, will send SIGTERM then SIGKILL): 8388608 KiB
+Enforcing VSIZE limit (hard limit, stack expansion will fail with SIGSEGV, brk() and mmap() will return ENOMEM): 8439808 KiB
+Linux 6.6.32-linuxkit
+Current StackSize limit: 8192 KiB
+
+solver pid=15664, runsolver pid=15663
+
+[startup+0.100698 s]*
+/proc/loadavg: 0.17 0.05 0.09 2/319 15666
+/proc/meminfo: memFree=44329088/49250688 swapFree=1048572/1048572
+[pid=15664] ppid=15663 vsize=971160 memory=17888 CPUtime=0.08 cores=0-9
+/proc/15664/stat : 15664 (minizinc) R 15663 15664 1 34816 15552 4194304 1780 0 50 0 7 1 0 0 20 0 2 0 929760 994467840 4472 18446744073709551615 140737488506880 140737488954136 281474083764032 0 0 0 0 0 1040 0 0 0 17 0 0 0 0 0 0 140737489010688 140737490079904 140737879310336 281474083766777 281474083766952 281474083766952 281474083770325 0
+/proc/15664/statm: 242790 4472 1824 110 0 235694 0
+[pid=15664/tid=15666] ppid=15663 vsize=971160 memory=4026532043 CPUtime=0 cores=0-9
+/proc/15664/task/15666/stat : 15666 (minizinc) S 15663 15664 1 34816 15552 4194368 0 0 0 0 0 0 0 0 20 0 2 0 929766 994467840 4472 18446744073709551615 140737488506880 140737488954136 281474083764032 0 0 0 0 0 1040 1 0 0 -1 4 0 0 0 0 0 140737489010688 140737490079904 140737879310336 281474083766777 281474083766952 281474083766952 281474083770325 0
+Current children cumulated CPU time: 0.08 s
+Current children cumulated vsize: 971160 KiB
+Current children cumulated memory: 17888 KiB
+
+[startup+0.160887 s]
+# the end of solver process 15664 was just reported to runsolver
+# cumulated CPU time of all completed processes:  user=0.087082 s, system=0.020733 s
+
+Solver just ended.
+??? end of watcher thread
+Dumping a history of the last processes samples
+
+[startup+0.100698 s]*
+/proc/loadavg: 0.17 0.05 0.09 2/319 15666
+/proc/meminfo: memFree=44329088/49250688 swapFree=1048572/1048572
+[pid=15664] ppid=15663 vsize=971160 memory=17888 CPUtime=0.08 cores=0-9
+/proc/15664/stat : 15664 (minizinc) R 15663 15664 1 34816 15552 4194304 1780 0 50 0 7 1 0 0 20 0 2 0 929760 994467840 4472 18446744073709551615 140737488506880 140737488954136 281474083764032 0 0 0 0 0 1040 0 0 0 17 0 0 0 0 0 0 140737489010688 140737490079904 140737879310336 281474083766777 281474083766952 281474083766952 281474083770325 0
+/proc/15664/statm: 242790 4472 1824 110 0 235694 0
+[pid=15664/tid=15666] ppid=15663 vsize=971160 memory=4026532043 CPUtime=0 cores=0-9
+/proc/15664/task/15666/stat : 15666 (minizinc) S 15663 15664 1 34816 15552 4194368 0 0 0 0 0 0 0 0 20 0 2 0 929766 994467840 4472 18446744073709551615 140737488506880 140737488954136 281474083764032 0 0 0 0 0 1040 1 0 0 -1 4 0 0 0 0 0 140737489010688 140737490079904 140737879310336 281474083766777 281474083766952 281474083766952 281474083770325 0
+Current children cumulated CPU time: 0.08 s
+Current children cumulated vsize: 971160 KiB
+Current children cumulated memory: 17888 KiB
+
+Child status: 1
+Real time (s): 0.161044
+CPU time (s): 0.107815
+CPU user time (s): 0.087082
+CPU system time (s): 0.020733
+CPU usage (%): 66.9476
+Max. virtual memory (cumulated for all children) (KiB): 971160
+Max. memory (cumulated for all children) (KiB): 17888
+
+getrusage(RUSAGE_CHILDREN,...) data:
+user time used= 0.087082
+system time used= 0.020733
+maximum resident set size= 20856
+integral shared memory size= 0
+integral unshared data size= 0
+integral unshared stack size= 0
+page reclaims= 2594
+page faults= 59
+swaps= 0
+block input operations= 0
+block output operations= 0
+messages sent= 0
+messages received= 0
+signals received= 0
+voluntary context switches= 1309
+involuntary context switches= 11
+
+
+# summary of solver processes directly reported to runsolver:
+#   pid: 15664
+#   total CPU time (s): 0.107815
+#   total CPU user time (s): 0.087082
+#   total CPU system time (s): 0.020733
+
+??? end of timestamper thread
+runsolver used 0.03367 second user time and 0.003367 second system time
+
+The end

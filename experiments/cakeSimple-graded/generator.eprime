@@ -1,0 +1,16 @@
+language ESSENCE' 1.0
+
+branching on []
+such that true
+
+$ Conjure's
+$ {"finds": [], "givens": [], "enumGivens": [], "enumLettings": [],
+$  "lettings":
+$      [[{"Name": "flour_capacity_gen"}, {"Constant": {"ConstantInt": [{"TagInt": []}, 4000]}}],
+$       [{"Name": "bananas_capacity_gen"}, {"Constant": {"ConstantInt": [{"TagInt": []}, 6]}}],
+$       [{"Name": "sugar_capacity_gen"}, {"Constant": {"ConstantInt": [{"TagInt": []}, 2000]}}],
+$       [{"Name": "butter_capacity_gen"}, {"Constant": {"ConstantInt": [{"TagInt": []}, 500]}}],
+$       [{"Name": "cocoa_capacity_gen"}, {"Constant": {"ConstantInt": [{"TagInt": []}, 500]}}]],
+$  "unnameds": [], "strategyQ": {"PickFirst": []}, "strategyA": {"Compact": []}, "trailCompact": [], "nameGenState": [],
+$  "nbExtraGivens": 0, "representations": [], "representationsTree": [], "originalDomains": [], "trailGeneralised": [],
+$  "trailVerbose": [], "trailRewrites": []}

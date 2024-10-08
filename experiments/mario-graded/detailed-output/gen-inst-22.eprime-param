@@ -1,0 +1,6 @@
+language ESSENCE' 1.0
+
+letting num_houses be 94
+letting total_fuel be 17236
+letting max_gold be 25
+letting max_distance be 390

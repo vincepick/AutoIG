@@ -1,0 +1,13 @@
+2024-09-29 08:54:49: /AutoIG/scripts/wrapper.py 23 1 1965286212 dummy -Ag 1 -Tg 9 -Xg 4 -Zg 2 -ground_coverage 8 -avg_height_ratio 91
+{'generalSettings': {'experimentType': 'graded', 'modelFile': '/AutoIG/data/models/macc/problem.mzn', 'generatorFile': '/AutoIG/data/models/macc/generator-small.essence', 'runDir': '/AutoIG/experiments/macc-graded'}, 'generatorSettings': {'genSRTimeLimit': 300, 'genSRFlags': '-S0 -no-bound-vars', 'genSolver': 'minion', 'genSolverTimeLimit': '5', 'genSolverFlags': '-varorder domoverwdeg -valorder random'}, 'evaluationSettings': {'nEvaluations': 1, 'gradedTypes': 'all', 'solver': 'chuffed', 'solverType': 'complete', 'minTime': 0, 'solverFlags': '-f', 'totalTimeLimit': 5}}
+
+
+2024-09-29 08:54:49: Creating generator instance: ./detailed-output/gen-inst-23.param
+2024-09-29 08:54:49: minion ./detailed-output/gen-inst-23.minion -solsout ./detailed-output/gen-inst-23.solution -randomseed 1965286212 -timelimit 5 -varorder domoverwdeg -valorder random
+
+
+2024-09-29 08:54:49: 
+Generator results: genInstance=gen-inst-23, genStatus=unsat, genSRTime=0, genSolverTime=0.08587455749511719
+No instance file generated. Exitting...
+{'totalTime': 0.09497547149658203, 'genResults': {'instance': 'gen-inst-23.param', 'status': 'unsat', 'seed': 1965286212, 'SRTime': 0, 'solverTime': 0.08587455749511719}, 'instanceResults': {}, 'status': 'genunsat', 'score': 'Inf'}
+Inf 0.09

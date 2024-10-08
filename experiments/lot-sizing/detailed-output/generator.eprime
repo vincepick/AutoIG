@@ -1,0 +1,794 @@
+language ESSENCE' 1.0
+
+given tuner_nb_item_types: int(1..20)
+given tuner_nb_orders_delta: int(0..10)
+letting tuner_nb_orders be tuner_nb_item_types + tuner_nb_orders_delta
+given tuner_nb_periods: int(1..30)
+given tuner_inventory_cost: int(1..10)
+find nb_orders: int(1..tuner_nb_orders)
+find nb_item_types: int(1..tuner_nb_orders)
+find nb_periods: int(1..tuner_nb_periods)
+find inventory_cost: int(1..tuner_inventory_cost)
+find due_period: matrix indexed by [int(1..tuner_nb_orders)] of int(1..tuner_nb_periods)
+find change_cost: matrix indexed by [int(0..tuner_nb_orders), int(0..tuner_nb_orders)] of int(0..200)
+find nb_of_orders: matrix indexed by [int(1..tuner_nb_item_types)] of int(1..tuner_nb_orders)
+find item_type: matrix indexed by [int(0..tuner_nb_orders)] of int(0..tuner_nb_item_types)
+branching on [nb_orders, nb_item_types, nb_periods, inventory_cost, due_period, change_cost, nb_of_orders, item_type]
+such that
+    nb_orders = tuner_nb_orders,
+    nb_item_types = tuner_nb_item_types,
+    nb_periods = tuner_nb_periods,
+    inventory_cost = tuner_inventory_cost,
+    sum([nb_of_orders[q7] | q7 : int(1..tuner_nb_item_types)]) = tuner_nb_orders,
+    and([item_type[i] >= item_type[i - 1] | i : int(1..tuner_nb_orders)]),
+    item_type[0] = 0,
+    and([sum([toInt(item_type[j] = i) | j : int(1..tuner_nb_orders)]) = nb_of_orders[i]
+             | i : int(1..tuner_nb_item_types)]),
+    and([and([and([i != j /\ j != k /\ i != k -> change_cost[i, j] + change_cost[j, k] >= change_cost[i, k]
+                       | k : int(1..tuner_nb_orders)])
+                  | j : int(1..tuner_nb_orders)])
+             | i : int(1..tuner_nb_orders)]),
+    and([change_cost[i, i] = 0 | i : int(0..tuner_nb_orders)]),
+    and([change_cost[i, 0] = 0 | i : int(0..tuner_nb_orders)]),
+    and([change_cost[0, i] = 0 | i : int(0..tuner_nb_orders)])
+
+$ Conjure's
+$ {"finds":
+$      [{"Name": "nb_orders"}, {"Name": "nb_item_types"}, {"Name": "nb_periods"}, {"Name": "inventory_cost"},
+$       {"Name": "due_period"}, {"Name": "change_cost"}, {"Name": "nb_of_orders"}, {"Name": "item_type"}],
+$  "givens":
+$      [{"Name": "tuner_nb_item_types"}, {"Name": "tuner_nb_orders_delta"}, {"Name": "tuner_nb_periods"},
+$       {"Name": "tuner_inventory_cost"}],
+$  "enumGivens": [], "enumLettings": [],
+$  "lettings":
+$      [[{"Name": "Items"},
+$        {"Domain":
+$             {"DomainInt":
+$                  [{"TagInt": []},
+$                   [{"RangeBounded":
+$                         [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                          {"Reference":
+$                               [{"Name": "tuner_nb_item_types"},
+$                                {"DeclNoRepr":
+$                                     ["Given", {"Name": "tuner_nb_item_types"},
+$                                      {"DomainInt":
+$                                           [{"TagInt": []},
+$                                            [{"RangeBounded":
+$                                                  [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                   {"Constant": {"ConstantInt": [{"TagInt": []}, 20]}}]}]]},
+$                                      {"NoRegion": []}]}]}]}]]}}],
+$       [{"Name": "Items0"},
+$        {"Domain":
+$             {"DomainInt":
+$                  [{"TagInt": []},
+$                   [{"RangeBounded":
+$                         [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                          {"Reference":
+$                               [{"Name": "tuner_nb_item_types"},
+$                                {"DeclNoRepr":
+$                                     ["Given", {"Name": "tuner_nb_item_types"},
+$                                      {"DomainInt":
+$                                           [{"TagInt": []},
+$                                            [{"RangeBounded":
+$                                                  [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                   {"Constant": {"ConstantInt": [{"TagInt": []}, 20]}}]}]]},
+$                                      {"NoRegion": []}]}]}]}]]}}],
+$       [{"Name": "tuner_nb_orders"},
+$        {"Op":
+$             {"MkOpSum":
+$                  {"AbstractLiteral":
+$                       {"AbsLitMatrix":
+$                            [{"DomainInt":
+$                                  [{"TagInt": []},
+$                                   [{"RangeBounded":
+$                                         [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                          {"Constant": {"ConstantInt": [{"TagInt": []}, 2]}}]}]]},
+$                             [{"Reference":
+$                                   [{"Name": "tuner_nb_item_types"},
+$                                    {"DeclNoRepr":
+$                                         ["Given", {"Name": "tuner_nb_item_types"},
+$                                          {"DomainInt":
+$                                               [{"TagInt": []},
+$                                                [{"RangeBounded":
+$                                                      [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                       {"Constant": {"ConstantInt": [{"TagInt": []}, 20]}}]}]]},
+$                                          {"NoRegion": []}]}]},
+$                              {"Reference":
+$                                   [{"Name": "tuner_nb_orders_delta"},
+$                                    {"DeclNoRepr":
+$                                         ["Given", {"Name": "tuner_nb_orders_delta"},
+$                                          {"DomainInt":
+$                                               [{"TagInt": []},
+$                                                [{"RangeBounded":
+$                                                      [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                                                       {"Constant": {"ConstantInt": [{"TagInt": []}, 10]}}]}]]},
+$                                          {"NoRegion": []}]}]}]]}}}}],
+$       [{"Name": "Orders"},
+$        {"Domain":
+$             {"DomainInt":
+$                  [{"TagInt": []},
+$                   [{"RangeBounded":
+$                         [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                          {"Reference":
+$                               [{"Name": "tuner_nb_orders"},
+$                                {"Alias":
+$                                     {"Op":
+$                                          {"MkOpSum":
+$                                               {"AbstractLiteral":
+$                                                    {"AbsLitMatrix":
+$                                                         [{"DomainInt":
+$                                                               [{"TagInt": []},
+$                                                                [{"RangeBounded":
+$                                                                      [{"Constant":
+$                                                                            {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                                       {"Constant":
+$                                                                            {"ConstantInt": [{"TagInt": []}, 2]}}]}]]},
+$                                                          [{"Reference":
+$                                                                [{"Name": "tuner_nb_item_types"},
+$                                                                 {"DeclNoRepr":
+$                                                                      ["Given", {"Name": "tuner_nb_item_types"},
+$                                                                       {"DomainInt":
+$                                                                            [{"TagInt": []},
+$                                                                             [{"RangeBounded":
+$                                                                                   [{"Constant":
+$                                                                                         {"ConstantInt":
+$                                                                                              [{"TagInt": []}, 1]}},
+$                                                                                    {"Constant":
+$                                                                                         {"ConstantInt":
+$                                                                                              [{"TagInt": []},
+$                                                                                               20]}}]}]]},
+$                                                                       {"NoRegion": []}]}]},
+$                                                           {"Reference":
+$                                                                [{"Name": "tuner_nb_orders_delta"},
+$                                                                 {"DeclNoRepr":
+$                                                                      ["Given", {"Name": "tuner_nb_orders_delta"},
+$                                                                       {"DomainInt":
+$                                                                            [{"TagInt": []},
+$                                                                             [{"RangeBounded":
+$                                                                                   [{"Constant":
+$                                                                                         {"ConstantInt":
+$                                                                                              [{"TagInt": []}, 0]}},
+$                                                                                    {"Constant":
+$                                                                                         {"ConstantInt":
+$                                                                                              [{"TagInt": []},
+$                                                                                               10]}}]}]]},
+$                                                                       {"NoRegion": []}]}]}]]}}}}}]}]}]]}}],
+$       [{"Name": "Orders0"},
+$        {"Domain":
+$             {"DomainInt":
+$                  [{"TagInt": []},
+$                   [{"RangeBounded":
+$                         [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                          {"Reference":
+$                               [{"Name": "tuner_nb_orders"},
+$                                {"Alias":
+$                                     {"Op":
+$                                          {"MkOpSum":
+$                                               {"AbstractLiteral":
+$                                                    {"AbsLitMatrix":
+$                                                         [{"DomainInt":
+$                                                               [{"TagInt": []},
+$                                                                [{"RangeBounded":
+$                                                                      [{"Constant":
+$                                                                            {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                                       {"Constant":
+$                                                                            {"ConstantInt": [{"TagInt": []}, 2]}}]}]]},
+$                                                          [{"Reference":
+$                                                                [{"Name": "tuner_nb_item_types"},
+$                                                                 {"DeclNoRepr":
+$                                                                      ["Given", {"Name": "tuner_nb_item_types"},
+$                                                                       {"DomainInt":
+$                                                                            [{"TagInt": []},
+$                                                                             [{"RangeBounded":
+$                                                                                   [{"Constant":
+$                                                                                         {"ConstantInt":
+$                                                                                              [{"TagInt": []}, 1]}},
+$                                                                                    {"Constant":
+$                                                                                         {"ConstantInt":
+$                                                                                              [{"TagInt": []},
+$                                                                                               20]}}]}]]},
+$                                                                       {"NoRegion": []}]}]},
+$                                                           {"Reference":
+$                                                                [{"Name": "tuner_nb_orders_delta"},
+$                                                                 {"DeclNoRepr":
+$                                                                      ["Given", {"Name": "tuner_nb_orders_delta"},
+$                                                                       {"DomainInt":
+$                                                                            [{"TagInt": []},
+$                                                                             [{"RangeBounded":
+$                                                                                   [{"Constant":
+$                                                                                         {"ConstantInt":
+$                                                                                              [{"TagInt": []}, 0]}},
+$                                                                                    {"Constant":
+$                                                                                         {"ConstantInt":
+$                                                                                              [{"TagInt": []},
+$                                                                                               10]}}]}]]},
+$                                                                       {"NoRegion": []}]}]}]]}}}}}]}]}]]}}],
+$       [{"Name": "Periods"},
+$        {"Domain":
+$             {"DomainInt":
+$                  [{"TagInt": []},
+$                   [{"RangeBounded":
+$                         [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                          {"Reference":
+$                               [{"Name": "tuner_nb_periods"},
+$                                {"DeclNoRepr":
+$                                     ["Given", {"Name": "tuner_nb_periods"},
+$                                      {"DomainInt":
+$                                           [{"TagInt": []},
+$                                            [{"RangeBounded":
+$                                                  [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                   {"Constant": {"ConstantInt": [{"TagInt": []}, 30]}}]}]]},
+$                                      {"NoRegion": []}]}]}]}]]}}]],
+$  "unnameds": [], "strategyQ": {"PickFirst": []}, "strategyA": {"Compact": []},
+$  "trailCompact":
+$      [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1],
+$       [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1],
+$       [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1],
+$       [1, 1, 1], [1, 1, 1], [1, 1, 1]],
+$  "nameGenState": [["q", 8]], "nbExtraGivens": 0,
+$  "representations":
+$      [[{"Name": "tuner_nb_item_types"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 20]}}]}]]}],
+$       [{"Name": "tuner_nb_orders_delta"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10]}}]}]]}],
+$       [{"Name": "tuner_nb_periods"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 30]}}]}]]}],
+$       [{"Name": "tuner_inventory_cost"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10]}}]}]]}],
+$       [{"Name": "nb_orders"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference":
+$                          [{"Name": "tuner_nb_orders"},
+$                           {"Alias":
+$                                {"Op":
+$                                     {"MkOpSum":
+$                                          {"AbstractLiteral":
+$                                               {"AbsLitMatrix":
+$                                                    [{"DomainInt":
+$                                                          [{"TagInt": []},
+$                                                           [{"RangeBounded":
+$                                                                 [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                                  {"Constant":
+$                                                                       {"ConstantInt": [{"TagInt": []}, 2]}}]}]]},
+$                                                     [{"Reference":
+$                                                           [{"Name": "tuner_nb_item_types"},
+$                                                            {"DeclHasRepr":
+$                                                                 ["Given", {"Name": "tuner_nb_item_types"},
+$                                                                  {"DomainInt":
+$                                                                       [{"TagInt": []},
+$                                                                        [{"RangeBounded":
+$                                                                              [{"Constant":
+$                                                                                    {"ConstantInt":
+$                                                                                         [{"TagInt": []}, 1]}},
+$                                                                               {"Constant":
+$                                                                                    {"ConstantInt":
+$                                                                                         [{"TagInt": []}, 20]}}]}]]}]}]},
+$                                                      {"Reference":
+$                                                           [{"Name": "tuner_nb_orders_delta"},
+$                                                            {"DeclHasRepr":
+$                                                                 ["Given", {"Name": "tuner_nb_orders_delta"},
+$                                                                  {"DomainInt":
+$                                                                       [{"TagInt": []},
+$                                                                        [{"RangeBounded":
+$                                                                              [{"Constant":
+$                                                                                    {"ConstantInt":
+$                                                                                         [{"TagInt": []}, 0]}},
+$                                                                               {"Constant":
+$                                                                                    {"ConstantInt":
+$                                                                                         [{"TagInt": []},
+$                                                                                          10]}}]}]]}]}]}]]}}}}}]}]}]]}],
+$       [{"Name": "nb_item_types"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference":
+$                          [{"Name": "tuner_nb_orders"},
+$                           {"Alias":
+$                                {"Op":
+$                                     {"MkOpSum":
+$                                          {"AbstractLiteral":
+$                                               {"AbsLitMatrix":
+$                                                    [{"DomainInt":
+$                                                          [{"TagInt": []},
+$                                                           [{"RangeBounded":
+$                                                                 [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                                  {"Constant":
+$                                                                       {"ConstantInt": [{"TagInt": []}, 2]}}]}]]},
+$                                                     [{"Reference":
+$                                                           [{"Name": "tuner_nb_item_types"},
+$                                                            {"DeclHasRepr":
+$                                                                 ["Given", {"Name": "tuner_nb_item_types"},
+$                                                                  {"DomainInt":
+$                                                                       [{"TagInt": []},
+$                                                                        [{"RangeBounded":
+$                                                                              [{"Constant":
+$                                                                                    {"ConstantInt":
+$                                                                                         [{"TagInt": []}, 1]}},
+$                                                                               {"Constant":
+$                                                                                    {"ConstantInt":
+$                                                                                         [{"TagInt": []}, 20]}}]}]]}]}]},
+$                                                      {"Reference":
+$                                                           [{"Name": "tuner_nb_orders_delta"},
+$                                                            {"DeclHasRepr":
+$                                                                 ["Given", {"Name": "tuner_nb_orders_delta"},
+$                                                                  {"DomainInt":
+$                                                                       [{"TagInt": []},
+$                                                                        [{"RangeBounded":
+$                                                                              [{"Constant":
+$                                                                                    {"ConstantInt":
+$                                                                                         [{"TagInt": []}, 0]}},
+$                                                                               {"Constant":
+$                                                                                    {"ConstantInt":
+$                                                                                         [{"TagInt": []},
+$                                                                                          10]}}]}]]}]}]}]]}}}}}]}]}]]}],
+$       [{"Name": "nb_periods"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference":
+$                          [{"Name": "tuner_nb_periods"},
+$                           {"DeclHasRepr":
+$                                ["Given", {"Name": "tuner_nb_periods"},
+$                                 {"DomainInt":
+$                                      [{"TagInt": []},
+$                                       [{"RangeBounded":
+$                                             [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                              {"Constant": {"ConstantInt": [{"TagInt": []}, 30]}}]}]]}]}]}]}]]}],
+$       [{"Name": "inventory_cost"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference":
+$                          [{"Name": "tuner_inventory_cost"},
+$                           {"DeclHasRepr":
+$                                ["Given", {"Name": "tuner_inventory_cost"},
+$                                 {"DomainInt":
+$                                      [{"TagInt": []},
+$                                       [{"RangeBounded":
+$                                             [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                              {"Constant": {"ConstantInt": [{"TagInt": []}, 10]}}]}]]}]}]}]}]]}],
+$       [{"Name": "nb_of_orders"},
+$        {"DomainMatrix":
+$             [{"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                           {"Reference":
+$                                [{"Name": "tuner_nb_item_types"},
+$                                 {"DeclHasRepr":
+$                                      ["Given", {"Name": "tuner_nb_item_types"},
+$                                       {"DomainInt":
+$                                            [{"TagInt": []},
+$                                             [{"RangeBounded":
+$                                                   [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                    {"Constant": {"ConstantInt": [{"TagInt": []}, 20]}}]}]]}]}]}]}]]},
+$              {"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                           {"Reference":
+$                                [{"Name": "tuner_nb_orders"},
+$                                 {"Alias":
+$                                      {"Op":
+$                                           {"MkOpSum":
+$                                                {"AbstractLiteral":
+$                                                     {"AbsLitMatrix":
+$                                                          [{"DomainInt":
+$                                                                [{"TagInt": []},
+$                                                                 [{"RangeBounded":
+$                                                                       [{"Constant":
+$                                                                             {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                                        {"Constant":
+$                                                                             {"ConstantInt": [{"TagInt": []}, 2]}}]}]]},
+$                                                           [{"Reference":
+$                                                                 [{"Name": "tuner_nb_item_types"},
+$                                                                  {"DeclHasRepr":
+$                                                                       ["Given", {"Name": "tuner_nb_item_types"},
+$                                                                        {"DomainInt":
+$                                                                             [{"TagInt": []},
+$                                                                              [{"RangeBounded":
+$                                                                                    [{"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []}, 1]}},
+$                                                                                     {"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []},
+$                                                                                                20]}}]}]]}]}]},
+$                                                            {"Reference":
+$                                                                 [{"Name": "tuner_nb_orders_delta"},
+$                                                                  {"DeclHasRepr":
+$                                                                       ["Given", {"Name": "tuner_nb_orders_delta"},
+$                                                                        {"DomainInt":
+$                                                                             [{"TagInt": []},
+$                                                                              [{"RangeBounded":
+$                                                                                    [{"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []}, 0]}},
+$                                                                                     {"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []},
+$                                                                                                10]}}]}]]}]}]}]]}}}}}]}]}]]}]}],
+$       [{"Name": "item_type"},
+$        {"DomainMatrix":
+$             [{"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                           {"Reference":
+$                                [{"Name": "tuner_nb_orders"},
+$                                 {"Alias":
+$                                      {"Op":
+$                                           {"MkOpSum":
+$                                                {"AbstractLiteral":
+$                                                     {"AbsLitMatrix":
+$                                                          [{"DomainInt":
+$                                                                [{"TagInt": []},
+$                                                                 [{"RangeBounded":
+$                                                                       [{"Constant":
+$                                                                             {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                                        {"Constant":
+$                                                                             {"ConstantInt": [{"TagInt": []}, 2]}}]}]]},
+$                                                           [{"Reference":
+$                                                                 [{"Name": "tuner_nb_item_types"},
+$                                                                  {"DeclHasRepr":
+$                                                                       ["Given", {"Name": "tuner_nb_item_types"},
+$                                                                        {"DomainInt":
+$                                                                             [{"TagInt": []},
+$                                                                              [{"RangeBounded":
+$                                                                                    [{"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []}, 1]}},
+$                                                                                     {"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []},
+$                                                                                                20]}}]}]]}]}]},
+$                                                            {"Reference":
+$                                                                 [{"Name": "tuner_nb_orders_delta"},
+$                                                                  {"DeclHasRepr":
+$                                                                       ["Given", {"Name": "tuner_nb_orders_delta"},
+$                                                                        {"DomainInt":
+$                                                                             [{"TagInt": []},
+$                                                                              [{"RangeBounded":
+$                                                                                    [{"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []}, 0]}},
+$                                                                                     {"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []},
+$                                                                                                10]}}]}]]}]}]}]]}}}}}]}]}]]},
+$              {"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                           {"Reference":
+$                                [{"Name": "tuner_nb_item_types"},
+$                                 {"DeclHasRepr":
+$                                      ["Given", {"Name": "tuner_nb_item_types"},
+$                                       {"DomainInt":
+$                                            [{"TagInt": []},
+$                                             [{"RangeBounded":
+$                                                   [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                    {"Constant": {"ConstantInt": [{"TagInt": []}, 20]}}]}]]}]}]}]}]]}]}],
+$       [{"Name": "change_cost"},
+$        {"DomainMatrix":
+$             [{"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                           {"Reference":
+$                                [{"Name": "tuner_nb_orders"},
+$                                 {"Alias":
+$                                      {"Op":
+$                                           {"MkOpSum":
+$                                                {"AbstractLiteral":
+$                                                     {"AbsLitMatrix":
+$                                                          [{"DomainInt":
+$                                                                [{"TagInt": []},
+$                                                                 [{"RangeBounded":
+$                                                                       [{"Constant":
+$                                                                             {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                                        {"Constant":
+$                                                                             {"ConstantInt": [{"TagInt": []}, 2]}}]}]]},
+$                                                           [{"Reference":
+$                                                                 [{"Name": "tuner_nb_item_types"},
+$                                                                  {"DeclHasRepr":
+$                                                                       ["Given", {"Name": "tuner_nb_item_types"},
+$                                                                        {"DomainInt":
+$                                                                             [{"TagInt": []},
+$                                                                              [{"RangeBounded":
+$                                                                                    [{"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []}, 1]}},
+$                                                                                     {"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []},
+$                                                                                                20]}}]}]]}]}]},
+$                                                            {"Reference":
+$                                                                 [{"Name": "tuner_nb_orders_delta"},
+$                                                                  {"DeclHasRepr":
+$                                                                       ["Given", {"Name": "tuner_nb_orders_delta"},
+$                                                                        {"DomainInt":
+$                                                                             [{"TagInt": []},
+$                                                                              [{"RangeBounded":
+$                                                                                    [{"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []}, 0]}},
+$                                                                                     {"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []},
+$                                                                                                10]}}]}]]}]}]}]]}}}}}]}]}]]},
+$              {"DomainMatrix":
+$                   [{"DomainInt":
+$                         [{"TagInt": []},
+$                          [{"RangeBounded":
+$                                [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                                 {"Reference":
+$                                      [{"Name": "tuner_nb_orders"},
+$                                       {"Alias":
+$                                            {"Op":
+$                                                 {"MkOpSum":
+$                                                      {"AbstractLiteral":
+$                                                           {"AbsLitMatrix":
+$                                                                [{"DomainInt":
+$                                                                      [{"TagInt": []},
+$                                                                       [{"RangeBounded":
+$                                                                             [{"Constant":
+$                                                                                   {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                                              {"Constant":
+$                                                                                   {"ConstantInt":
+$                                                                                        [{"TagInt": []}, 2]}}]}]]},
+$                                                                 [{"Reference":
+$                                                                       [{"Name": "tuner_nb_item_types"},
+$                                                                        {"DeclHasRepr":
+$                                                                             ["Given", {"Name": "tuner_nb_item_types"},
+$                                                                              {"DomainInt":
+$                                                                                   [{"TagInt": []},
+$                                                                                    [{"RangeBounded":
+$                                                                                          [{"Constant":
+$                                                                                                {"ConstantInt":
+$                                                                                                     [{"TagInt": []},
+$                                                                                                      1]}},
+$                                                                                           {"Constant":
+$                                                                                                {"ConstantInt":
+$                                                                                                     [{"TagInt": []},
+$                                                                                                      20]}}]}]]}]}]},
+$                                                                  {"Reference":
+$                                                                       [{"Name": "tuner_nb_orders_delta"},
+$                                                                        {"DeclHasRepr":
+$                                                                             ["Given", {"Name": "tuner_nb_orders_delta"},
+$                                                                              {"DomainInt":
+$                                                                                   [{"TagInt": []},
+$                                                                                    [{"RangeBounded":
+$                                                                                          [{"Constant":
+$                                                                                                {"ConstantInt":
+$                                                                                                     [{"TagInt": []},
+$                                                                                                      0]}},
+$                                                                                           {"Constant":
+$                                                                                                {"ConstantInt":
+$                                                                                                     [{"TagInt": []},
+$                                                                                                      10]}}]}]]}]}]}]]}}}}}]}]}]]},
+$                    {"DomainInt":
+$                         [{"TagInt": []},
+$                          [{"RangeBounded":
+$                                [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                                 {"Constant": {"ConstantInt": [{"TagInt": []}, 200]}}]}]]}]}]}],
+$       [{"Name": "due_period"},
+$        {"DomainMatrix":
+$             [{"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                           {"Reference":
+$                                [{"Name": "tuner_nb_orders"},
+$                                 {"Alias":
+$                                      {"Op":
+$                                           {"MkOpSum":
+$                                                {"AbstractLiteral":
+$                                                     {"AbsLitMatrix":
+$                                                          [{"DomainInt":
+$                                                                [{"TagInt": []},
+$                                                                 [{"RangeBounded":
+$                                                                       [{"Constant":
+$                                                                             {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                                        {"Constant":
+$                                                                             {"ConstantInt": [{"TagInt": []}, 2]}}]}]]},
+$                                                           [{"Reference":
+$                                                                 [{"Name": "tuner_nb_item_types"},
+$                                                                  {"DeclHasRepr":
+$                                                                       ["Given", {"Name": "tuner_nb_item_types"},
+$                                                                        {"DomainInt":
+$                                                                             [{"TagInt": []},
+$                                                                              [{"RangeBounded":
+$                                                                                    [{"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []}, 1]}},
+$                                                                                     {"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []},
+$                                                                                                20]}}]}]]}]}]},
+$                                                            {"Reference":
+$                                                                 [{"Name": "tuner_nb_orders_delta"},
+$                                                                  {"DeclHasRepr":
+$                                                                       ["Given", {"Name": "tuner_nb_orders_delta"},
+$                                                                        {"DomainInt":
+$                                                                             [{"TagInt": []},
+$                                                                              [{"RangeBounded":
+$                                                                                    [{"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []}, 0]}},
+$                                                                                     {"Constant":
+$                                                                                          {"ConstantInt":
+$                                                                                               [{"TagInt": []},
+$                                                                                                10]}}]}]]}]}]}]]}}}}}]}]}]]},
+$              {"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                           {"Reference":
+$                                [{"Name": "tuner_nb_periods"},
+$                                 {"DeclHasRepr":
+$                                      ["Given", {"Name": "tuner_nb_periods"},
+$                                       {"DomainInt":
+$                                            [{"TagInt": []},
+$                                             [{"RangeBounded":
+$                                                   [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                                                    {"Constant":
+$                                                         {"ConstantInt": [{"TagInt": []}, 30]}}]}]]}]}]}]}]]}]}]],
+$  "representationsTree":
+$      [[{"Name": "change_cost"},
+$        [{"rootLabel": null, "subForest": [{"rootLabel": null, "subForest": [{"rootLabel": null, "subForest": []}]}]}]],
+$       [{"Name": "due_period"}, [{"rootLabel": null, "subForest": [{"rootLabel": null, "subForest": []}]}]],
+$       [{"Name": "inventory_cost"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "item_type"}, [{"rootLabel": null, "subForest": [{"rootLabel": null, "subForest": []}]}]],
+$       [{"Name": "nb_item_types"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "nb_of_orders"}, [{"rootLabel": null, "subForest": [{"rootLabel": null, "subForest": []}]}]],
+$       [{"Name": "nb_orders"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "nb_periods"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "tuner_inventory_cost"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "tuner_nb_item_types"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "tuner_nb_orders_delta"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "tuner_nb_periods"}, [{"rootLabel": null, "subForest": []}]]],
+$  "originalDomains":
+$      [[{"Name": "tuner_nb_item_types"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 20]}}]}]]}],
+$       [{"Name": "tuner_nb_orders_delta"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10]}}]}]]}],
+$       [{"Name": "tuner_nb_periods"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 30]}}]}]]}],
+$       [{"Name": "tuner_inventory_cost"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10]}}]}]]}],
+$       [{"Name": "nb_orders"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference": [{"Name": "tuner_nb_orders"}, null]}]}]]}],
+$       [{"Name": "nb_item_types"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference": [{"Name": "tuner_nb_orders"}, null]}]}]]}],
+$       [{"Name": "nb_periods"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference": [{"Name": "tuner_nb_periods"}, null]}]}]]}],
+$       [{"Name": "inventory_cost"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Reference": [{"Name": "tuner_inventory_cost"}, null]}]}]]}],
+$       [{"Name": "due_period"},
+$        {"DomainMatrix":
+$             [{"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                           {"Reference": [{"Name": "tuner_nb_orders"}, null]}]}]]},
+$              {"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                           {"Reference": [{"Name": "tuner_nb_periods"}, null]}]}]]}]}],
+$       [{"Name": "change_cost"},
+$        {"DomainMatrix":
+$             [{"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                           {"Reference": [{"Name": "tuner_nb_orders"}, null]}]}]]},
+$              {"DomainMatrix":
+$                   [{"DomainInt":
+$                         [{"TagInt": []},
+$                          [{"RangeBounded":
+$                                [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                                 {"Reference": [{"Name": "tuner_nb_orders"}, null]}]}]]},
+$                    {"DomainInt":
+$                         [{"TagInt": []},
+$                          [{"RangeBounded":
+$                                [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                                 {"Constant": {"ConstantInt": [{"TagInt": []}, 200]}}]}]]}]}]}],
+$       [{"Name": "nb_of_orders"},
+$        {"DomainMatrix":
+$             [{"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                           {"Reference": [{"Name": "tuner_nb_item_types"}, null]}]}]]},
+$              {"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                           {"Reference": [{"Name": "tuner_nb_orders"}, null]}]}]]}]}],
+$       [{"Name": "item_type"},
+$        {"DomainMatrix":
+$             [{"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                           {"Reference": [{"Name": "tuner_nb_orders"}, null]}]}]]},
+$              {"DomainInt":
+$                   [{"TagInt": []},
+$                    [{"RangeBounded":
+$                          [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                           {"Reference": [{"Name": "tuner_nb_item_types"}, null]}]}]]}]}]],
+$  "trailGeneralised":
+$      [[-1412088846375125845, 8613122175808567661], [-2849131691092402956, 6370324340742669363],
+$       [8736311187020237341, -6979319389467829604], [898378676844220327, 7703565778463689700],
+$       [-5367884225436904649, 2989039888260978474], [2007911196360883277, -5950107625882000308],
+$       [-5027706534611624750, 1726446303670540147], [5598704012782485527, 911404177221224838],
+$       [7998229800926471398, -3497265458878789209], [-5068912501657245510, -7995178103087741461],
+$       [4337505292210926446, -6408589453327227733], [6676798781697480614, -6945641901103018653],
+$       [-9058178335383083356, 2700566615311808868], [-5389208767390496156, -6392403564722369264],
+$       [-6140761867989203564, -4652414651606742202], [-1476393342614789924, -5173208041326227530],
+$       [-5640497523013821036, -5342369523300347220], [-8326903578324981248, -5956823540659693599],
+$       [-5387677691266195742, 7825911515645673461], [-3827169060726121628, 8051014547140425645],
+$       [6813795329238503950, -8218958137932702740], [4615453301897713164, 2355736192461271537],
+$       [8346221799396336921, 6483327462699415606], [844221816123084364, 6835270256625189565],
+$       [3950165716723921685, -986380361726107916], [7231910459661138122, 2022348018655352042],
+$       [-9052806073213927291, -2727933165902693378], [1518960982230766493, 2835120365024008516],
+$       [-6404638993701553327, -6987122446145031912], [4498953782581000725, -8482050182335127606],
+$       [7741486325993338886, -6051260503697444538], [-452993325558861171, -2939180487095060304],
+$       [5901228614675537405, -3063440961808275776]],
+$  "trailVerbose": [], "trailRewrites": []}

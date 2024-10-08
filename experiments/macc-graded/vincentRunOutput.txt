@@ -1,0 +1,1215 @@
+#------------------------------------------------------------------------------
+# irace: An implementation in R of (Elitist) Iterated Racing
+# Version: 3.4.1.9fcaeaf
+# Copyright (C) 2010-2020
+# Manuel Lopez-Ibanez     <manuel.lopez-ibanez@manchester.ac.uk>
+# Jeremie Dubois-Lacoste  
+# Leslie Perez Caceres    <leslie.perez.caceres@ulb.ac.be>
+#
+# This is free software, and you are welcome to redistribute it under certain
+# conditions.  See the GNU General Public License for details. There is NO
+# WARRANTY; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# irace builds upon previous code from the race package:
+#     race: Racing methods for the selection of the best
+#     Copyright (C) 2003 Mauro Birattari
+#------------------------------------------------------------------------------
+# installed at: /AutoIG/bin/irace
+# called with: --seed 42 --scenario /AutoIG/scripts/scenario.R --parameter-file params.irace --train-instances-file instances --exec-dir ./ --max-experiments 180 --target-runner /AutoIG/scripts/target-runner --debug-level 2
+## irace scenario:
+scenarioFile = "./scenario.txt"
+parameterFile = "/AutoIG/experiments/macc-graded/params.irace"
+execDir = "/AutoIG/experiments/macc-graded"
+logFile = "/AutoIG/experiments/macc-graded/irace.Rdata"
+recoveryFile = NULL
+instances = "dummy"
+initConfigurations = NULL
+trainInstancesDir = ""
+trainInstancesFile = "/AutoIG/experiments/macc-graded/instances"
+configurationsFile = ""
+forbiddenExps = NULL = expression()
+forbiddenFile = ""
+targetRunner = "/AutoIG/scripts/target-runner"
+targetRunnerRetries = 0
+targetRunnerData = ""
+targetRunnerParallel = NULL
+targetEvaluator = NULL
+maxExperiments = 180
+maxTime = 0
+budgetEstimation = 0.02
+digits = 4
+debugLevel = 2
+nbIterations = 0
+nbExperimentsPerIteration = 0
+sampleInstances = TRUE
+testType = "friedman"
+firstTest = 5
+eachTest = 1
+minNbSurvival = 0
+nbConfigurations = 0
+mu = 5
+confidence = 0.95
+deterministic = FALSE
+seed = 42
+parallel = 0
+loadBalancing = TRUE
+mpi = FALSE
+batchmode = "0"
+softRestart = TRUE
+softRestartThreshold = 1e-04
+testInstancesDir = ""
+testInstancesFile = ""
+testInstances = NULL
+testNbElites = 1
+testIterationElites = FALSE
+elitist = TRUE
+elitistNewInstances = 1
+elitistLimit = 2
+repairConfiguration = function (id, allConfigurations, parameters, digits, nConfsPreviousRaces = 0) {    outputDir <- "./detailed-output/"    configuration <- allConfigurations[id - nConfsPreviousRaces,         ]    require(data.table)    repairModel <- paste(outputDir, "/repair.eprime", sep = "")    if (!file.exists(repairModel))         return(configuration)    start_time <- Sys.time()    originalConfiguration <- configuration    baseFileName <- id    outFile <- paste(outputDir, "/repairout-", baseFileName,         sep = "")    if (file.exists(outFile)) {        configuration <- fread(outFile)        return(configuration)    }    lsParams <- sort(parameters$names)    for (param in lsParams) {        maxParam <- NA        if (endsWith(param, "_min")) {            maxParam <- paste(substr(param, 1, nchar(param) -                 3), "max", sep = "")        }        else if (endsWith(param, "Min")) {            maxParam <- paste(substr(param, 1, nchar(param) -                 3), "Max", sep = "")        }        if (!is.na(maxParam)) {            minVal <- min(configuration[[param]], configuration[[maxParam]])            maxVal <- max(configuration[[param]], configuration[[maxParam]])            configuration[[param]] <- minVal            configuration[[maxParam]] <- maxVal        }    }    paramFile <- paste(outputDir, "/repair-", baseFileName, ".param",         sep = "")    lsLines <- c()    for (paramName in colnames(configuration)) {        if (!(paramName %in% c(".ID.", ".PARENT."))) {            val <- configuration[[paramName]]            lsLines <- c(lsLines, paste("letting", paramName,                 "be", val))        }    }    writeLines(lsLines, con <- file(paramFile))    close(con)    seed <- as.integer(id)    cmd <- paste("conjure solve repair.essence ", paramFile,         " -o ", outputDir, " --use-existing-model repair.eprime ",         " --solver-options \"-timelimit 120 -varorder domoverwdeg -randomiseorder",         "-randomseed", seed, "\"", " --copy-solutions=off")    cat(cmd, "\n")    exitCode <- system(cmd, intern = FALSE, wait = TRUE)    if (exitCode != 0) {        cat("ERROR while repairing configuration \n")        print(configuration)        return(NULL)    }    solutionFile <- paste(outputDir, "/repair-repair-", baseFileName,         "-solution000001.solution", sep = "")    lsLines <- readLines(con <- file(solutionFile))    close(con)    lsLines <- gsub("repaired_", "", lsLines)    lsLines <- lsLines[grep("letting ", lsLines)]    baseTempName <- paste(outputDir, "/repair-repair-", baseFileName,         sep = "")    for (endName in c(".eprime-info", ".eprime-infor", ".eprime-minion",         ".eprime-param", "-solution000001.eprime-solution", "-solution000001.solution")) {        file.remove(paste(baseTempName, endName, sep = ""))    }    file.remove(paramFile)    for (paramName in colnames(configuration)) {        if (!(paramName %in% c(".ID.", ".PARENT."))) {            pattern <- paste("letting ", paramName, " be ", sep = "")            s <- lsLines[grep(pattern, lsLines)]            newVal <- as.integer(trimws(strsplit(s, " be ")[[1]][2]))            configuration[[paramName]] <- newVal        }    }    cat("\nBefore repair: \n")    print(originalConfiguration)    cat("After repair: \n")    print(configuration)    cat("\n")    end_time <- Sys.time()    cat("\nRepairing time: ", round(end_time - start_time, 2),         " seconds\n")    write.csv(configuration, file = outFile, row.names = FALSE)    return(configuration)}
+capping = FALSE
+cappingType = "median"
+boundType = "candidate"
+boundMax = NULL
+boundDigits = 0
+boundPar = 1
+boundAsTimeout = TRUE
+postselection = 0
+aclib = FALSE
+## end of irace scenario
+# --- Parameters Hierarchy ---
+[1] "Ag"               "Tg"               "Xg"               "Zg"               "ground_coverage"  "avg_height_ratio"
+              Ag               Tg               Xg               Zg  ground_coverage avg_height_ratio 
+               1                1                1                1                1                1 
+              Ag               Tg               Xg               Zg  ground_coverage avg_height_ratio 
+              ""               ""               ""               ""               ""               "" 
+         Parameter Level Depends.on
+1               Ag     1           
+2               Tg     1           
+3               Xg     1           
+4               Zg     1           
+5  ground_coverage     1           
+6 avg_height_ratio     1           
+
+# ------------------------
+$names
+[1] "Ag"               "Tg"               "Xg"               "Zg"               "ground_coverage"  "avg_height_ratio"
+
+$types
+              Ag               Tg               Xg               Zg  ground_coverage avg_height_ratio 
+             "i"              "i"              "i"              "i"              "i"              "i" 
+
+$switches
+                  Ag                   Tg                   Xg                   Zg      ground_coverage     avg_height_ratio 
+              "-Ag "               "-Tg "               "-Xg "               "-Zg "  "-ground_coverage " "-avg_height_ratio " 
+
+$domain
+$domain$Ag
+[1] 1 3
+
+$domain$Tg
+[1]  1 20
+
+$domain$Xg
+[1]  3 10
+
+$domain$Zg
+[1] 2 3
+
+$domain$ground_coverage
+[1]   1 100
+
+$domain$avg_height_ratio
+[1]   0 100
+
+
+$conditions
+$conditions$Ag
+[1] TRUE
+
+$conditions$Tg
+[1] TRUE
+
+$conditions$Xg
+[1] TRUE
+
+$conditions$Zg
+[1] TRUE
+
+$conditions$ground_coverage
+[1] TRUE
+
+$conditions$avg_height_ratio
+[1] TRUE
+
+
+$isFixed
+              Ag               Tg               Xg               Zg  ground_coverage avg_height_ratio 
+           FALSE            FALSE            FALSE            FALSE            FALSE            FALSE 
+
+$transform
+$transform$Ag
+[1] ""
+
+$transform$Tg
+[1] ""
+
+$transform$Xg
+[1] ""
+
+$transform$Zg
+[1] ""
+
+$transform$ground_coverage
+[1] ""
+
+$transform$avg_height_ratio
+[1] ""
+
+
+$depends
+$depends$Ag
+character(0)
+
+$depends$Tg
+character(0)
+
+$depends$Xg
+character(0)
+
+$depends$Zg
+character(0)
+
+$depends$ground_coverage
+character(0)
+
+$depends$avg_height_ratio
+character(0)
+
+
+$hierarchy
+              Ag               Tg               Xg               Zg  ground_coverage avg_height_ratio 
+               1                1                1                1                1                1 
+
+$nbParameters
+[1] 6
+
+$nbFixed
+[1] 0
+
+$nbVariable
+[1] 6
+
+# 2024-10-07 21:41:43 UTC: Parameters have been read
+# 2024-10-07 21:41:43 UTC: Initialization
+# Elitist race
+# Elitist new instances: 1
+# Elitist limit: 2
+# nbIterations: 4
+# minNbSurvival: 4
+# nbParameters: 6
+# seed: 42
+# confidence level: 0.95
+# budget: 180
+# mu: 5
+# deterministic: FALSE
+
+# 2024-10-07 21:41:43 UTC: Iteration 1 of 4
+# experimentsUsedSoFar: 0
+# remainingBudget: 180
+# currentBudget: 45
+# nbConfigurations: 7
+# 2024-10-07 21:41:43 UTC: Sample 7 configurations from uniform distribution
+# 2024-10-07 21:41:44 UTC: Configurations for the race n 1 (elite configurations listed first, then new configurations):
+  .ID. Ag Tg Xg Zg ground_coverage avg_height_ratio .PARENT.
+1    1  2 17  3  3              63               14       NA
+2    2  1 10  9  3              82               17       NA
+3    3  3  6  4  3              33               78       NA
+4    4  2 14  9  2               3               13       NA
+5    5  3 19  7  3              20               54       NA
+6    6  1 10  5  2              19               73       NA
+7    7  2  9  6  2              14               83       NA
+# 2024-10-07 21:41:44 UTC: Launch race
+# Markers:
+     x No test is performed.
+     c Configurations are discarded only due to capping.
+     - The test is performed and some configurations are discarded.
+     = The test is performed but no configuration is discarded.
+     ! The test is performed and configurations could be discarded but elite configurations are preserved.
+     . All alive configurations are elite and nothing is discarded
+
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+| |   Instance|      Alive|       Best|      Mean best| Exp so far|  W time|  rho|KenW|  Qvar|
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+# 2024-10-07 21:41:44 UTC: /AutoIG/scripts/target-runner 1 1 1965286212 dummy   -Ag 2 -Tg 17 -Xg 3 -Zg 3 -ground_coverage 63 -avg_height_ratio 14
+# 2024-10-07 21:41:44 UTC: DONE (1) Elapsed wall-clock seconds: 0.14
+-1 3.65
+# 2024-10-07 21:41:44 UTC: /AutoIG/scripts/target-runner 2 1 1965286212 dummy   -Ag 1 -Tg 10 -Xg 9 -Zg 3 -ground_coverage 82 -avg_height_ratio 17
+# 2024-10-07 21:41:44 UTC: DONE (2) Elapsed wall-clock seconds: 0.14
+-1 6.64
+# 2024-10-07 21:41:44 UTC: /AutoIG/scripts/target-runner 3 1 1965286212 dummy   -Ag 3 -Tg 6 -Xg 4 -Zg 3 -ground_coverage 33 -avg_height_ratio 78
+# 2024-10-07 21:41:44 UTC: DONE (3) Elapsed wall-clock seconds: 0.14
+Inf 1.41
+# 2024-10-07 21:41:44 UTC: /AutoIG/scripts/target-runner 4 1 1965286212 dummy   -Ag 2 -Tg 14 -Xg 9 -Zg 2 -ground_coverage 3 -avg_height_ratio 13
+# 2024-10-07 21:41:44 UTC: DONE (4) Elapsed wall-clock seconds: 0.14
+Inf 1.64
+# 2024-10-07 21:41:44 UTC: /AutoIG/scripts/target-runner 5 1 1965286212 dummy   -Ag 3 -Tg 19 -Xg 7 -Zg 3 -ground_coverage 20 -avg_height_ratio 54
+# 2024-10-07 21:41:44 UTC: DONE (5) Elapsed wall-clock seconds: 0.14
+0 8.25
+# 2024-10-07 21:41:44 UTC: /AutoIG/scripts/target-runner 6 1 1965286212 dummy   -Ag 1 -Tg 10 -Xg 5 -Zg 2 -ground_coverage 19 -avg_height_ratio 73
+# 2024-10-07 21:41:44 UTC: DONE (6) Elapsed wall-clock seconds: 0.14
+Inf 1.5
+# 2024-10-07 21:41:44 UTC: /AutoIG/scripts/target-runner 7 1 1965286212 dummy   -Ag 2 -Tg 9 -Xg 6 -Zg 2 -ground_coverage 14 -avg_height_ratio 83
+# 2024-10-07 21:41:45 UTC: DONE (7) Elapsed wall-clock seconds: 0.14
+-1 6.93
+# 2024-10-07 21:41:45 UTC: Immediately rejected configurations: 3, 4, 6
+|x|          1|          4|          1|   -1.000000000|          7|00:00:00|   NA|  NA|    NA|
+# 2024-10-07 21:41:45 UTC: /AutoIG/scripts/target-runner 1 1 601225362 dummy   -Ag 2 -Tg 17 -Xg 3 -Zg 3 -ground_coverage 63 -avg_height_ratio 14
+# 2024-10-07 21:41:45 UTC: DONE (1) Elapsed wall-clock seconds: 0.14
+-1 2.21
+# 2024-10-07 21:41:45 UTC: /AutoIG/scripts/target-runner 2 1 601225362 dummy   -Ag 1 -Tg 10 -Xg 9 -Zg 3 -ground_coverage 82 -avg_height_ratio 17
+# 2024-10-07 21:41:45 UTC: DONE (2) Elapsed wall-clock seconds: 0.14
+-1 5.46
+# 2024-10-07 21:41:45 UTC: /AutoIG/scripts/target-runner 5 1 601225362 dummy   -Ag 3 -Tg 19 -Xg 7 -Zg 3 -ground_coverage 20 -avg_height_ratio 54
+# 2024-10-07 21:41:45 UTC: DONE (5) Elapsed wall-clock seconds: 0.14
+0 6.58
+# 2024-10-07 21:41:45 UTC: /AutoIG/scripts/target-runner 7 1 601225362 dummy   -Ag 2 -Tg 9 -Xg 6 -Zg 2 -ground_coverage 14 -avg_height_ratio 83
+# 2024-10-07 21:41:45 UTC: DONE (7) Elapsed wall-clock seconds: 0.14
+-1 5.38
+|x|          2|          4|          1|   -1.000000000|         11|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:41:45 UTC: /AutoIG/scripts/target-runner 1 1 510416220 dummy   -Ag 2 -Tg 17 -Xg 3 -Zg 3 -ground_coverage 63 -avg_height_ratio 14
+# 2024-10-07 21:41:45 UTC: DONE (1) Elapsed wall-clock seconds: 0.14
+-1 2.33
+# 2024-10-07 21:41:45 UTC: /AutoIG/scripts/target-runner 2 1 510416220 dummy   -Ag 1 -Tg 10 -Xg 9 -Zg 3 -ground_coverage 82 -avg_height_ratio 17
+# 2024-10-07 21:41:45 UTC: DONE (2) Elapsed wall-clock seconds: 0.14
+2 5.11
+# 2024-10-07 21:41:45 UTC: /AutoIG/scripts/target-runner 5 1 510416220 dummy   -Ag 3 -Tg 19 -Xg 7 -Zg 3 -ground_coverage 20 -avg_height_ratio 54
+# 2024-10-07 21:41:46 UTC: DONE (5) Elapsed wall-clock seconds: 0.14
+0 6.57
+# 2024-10-07 21:41:46 UTC: /AutoIG/scripts/target-runner 7 1 510416220 dummy   -Ag 2 -Tg 9 -Xg 6 -Zg 2 -ground_coverage 14 -avg_height_ratio 83
+# 2024-10-07 21:41:46 UTC: DONE (7) Elapsed wall-clock seconds: 0.14
+-1 5.21
+|x|          3|          4|          1|   -1.000000000|         15|00:00:00|+0.48|0.65|0.5000|
+# 2024-10-07 21:41:46 UTC: /AutoIG/scripts/target-runner 1 1 1489266180 dummy   -Ag 2 -Tg 17 -Xg 3 -Zg 3 -ground_coverage 63 -avg_height_ratio 14
+# 2024-10-07 21:41:46 UTC: DONE (1) Elapsed wall-clock seconds: 0.15
+-1 2.18
+# 2024-10-07 21:41:46 UTC: /AutoIG/scripts/target-runner 2 1 1489266180 dummy   -Ag 1 -Tg 10 -Xg 9 -Zg 3 -ground_coverage 82 -avg_height_ratio 17
+# 2024-10-07 21:41:46 UTC: DONE (2) Elapsed wall-clock seconds: 0.14
+-1 4.72
+# 2024-10-07 21:41:46 UTC: /AutoIG/scripts/target-runner 5 1 1489266180 dummy   -Ag 3 -Tg 19 -Xg 7 -Zg 3 -ground_coverage 20 -avg_height_ratio 54
+# 2024-10-07 21:41:46 UTC: DONE (5) Elapsed wall-clock seconds: 0.14
+0 6.57
+# 2024-10-07 21:41:46 UTC: /AutoIG/scripts/target-runner 7 1 1489266180 dummy   -Ag 2 -Tg 9 -Xg 6 -Zg 2 -ground_coverage 14 -avg_height_ratio 83
+# 2024-10-07 21:41:46 UTC: DONE (7) Elapsed wall-clock seconds: 0.14
+-1 5.73
+|x|          4|          4|          1|   -1.000000000|         19|00:00:00|+0.59|0.69|0.3750|
+# 2024-10-07 21:41:46 UTC: /AutoIG/scripts/target-runner 1 1 1222707704 dummy   -Ag 2 -Tg 17 -Xg 3 -Zg 3 -ground_coverage 63 -avg_height_ratio 14
+# 2024-10-07 21:41:46 UTC: DONE (1) Elapsed wall-clock seconds: 0.16
+-1 2.36
+# 2024-10-07 21:41:46 UTC: /AutoIG/scripts/target-runner 2 1 1222707704 dummy   -Ag 1 -Tg 10 -Xg 9 -Zg 3 -ground_coverage 82 -avg_height_ratio 17
+# 2024-10-07 21:41:47 UTC: DONE (2) Elapsed wall-clock seconds: 0.15
+2 5.13
+# 2024-10-07 21:41:47 UTC: /AutoIG/scripts/target-runner 5 1 1222707704 dummy   -Ag 3 -Tg 19 -Xg 7 -Zg 3 -ground_coverage 20 -avg_height_ratio 54
+# 2024-10-07 21:41:47 UTC: DONE (5) Elapsed wall-clock seconds: 0.14
+0 6.56
+# 2024-10-07 21:41:47 UTC: /AutoIG/scripts/target-runner 7 1 1222707704 dummy   -Ag 2 -Tg 9 -Xg 6 -Zg 2 -ground_coverage 14 -avg_height_ratio 83
+# 2024-10-07 21:41:47 UTC: DONE (7) Elapsed wall-clock seconds: 0.14
+0 6.62
+|-|          5|          3|          1|   -1.000000000|         23|00:00:00|+0.21|0.37|0.2037|
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+# Stopped because number of alive configurations (3) <= minimum number of configurations (4)
+Best-so-far configuration:           1    mean value:    -1.000000000
+Description of the best-so-far configuration:
+  .ID. Ag Tg Xg Zg ground_coverage avg_height_ratio .PARENT.
+1    1  2 17  3  3              63               14       NA
+
+# 2024-10-07 21:41:47 UTC: Extracting elites
+# 2024-10-07 21:41:47 UTC: Elite configurations (first number is the configuration ID; listed from best to worst according to the sum of ranks):
+  .ID. Ag Tg Xg Zg ground_coverage avg_height_ratio .PARENT. .ALIVE. .RANK.          .WEIGHT.
+1    1  2 17  3  3              63               14       NA    TRUE    8.5 0.500000000000000
+7    7  2  9  6  2              14               83       NA    TRUE    9.5 0.333333333333333
+2    2  1 10  9  3              82               17       NA    TRUE   12.0 0.166666666666667
+# 2024-10-07 21:41:47 UTC: Initialise model
+# 2024-10-07 21:41:47 UTC: End of iteration 1
+# 2024-10-07 21:41:47 UTC: Iteration 2 of 4
+# experimentsUsedSoFar: 23
+# remainingBudget: 157
+# currentBudget: 52
+# nbConfigurations: 9
+# 2024-10-07 21:41:47 UTC: Update model
+# Model:
+$Ag
+$Ag$`1`
+[1] 0.7418364 2.0000000
+
+$Ag$`7`
+[1] 0.7418364 2.0000000
+
+$Ag$`2`
+[1] 0.7418364 1.0000000
+
+
+$Tg
+$Tg$`1`
+[1]  7.047446 17.000000
+
+$Tg$`7`
+[1] 7.047446 9.000000
+
+$Tg$`2`
+[1]  7.047446 10.000000
+
+
+$Xg
+$Xg$`1`
+[1] 2.596427 3.000000
+
+$Xg$`7`
+[1] 2.596427 6.000000
+
+$Xg$`2`
+[1] 2.596427 9.000000
+
+
+$Zg
+$Zg$`1`
+[1] 0.3709182 3.0000000
+
+$Zg$`7`
+[1] 0.3709182 2.0000000
+
+$Zg$`2`
+[1] 0.3709182 3.0000000
+
+
+$ground_coverage
+$ground_coverage$`1`
+[1] 36.7209 63.0000
+
+$ground_coverage$`7`
+[1] 36.7209 14.0000
+
+$ground_coverage$`2`
+[1] 36.7209 82.0000
+
+
+$avg_height_ratio
+$avg_height_ratio$`1`
+[1] 37.09182 14.00000
+
+$avg_height_ratio$`7`
+[1] 37.09182 83.00000
+
+$avg_height_ratio$`2`
+[1] 37.09182 17.00000
+
+
+# 2024-10-07 21:41:47 UTC: Sample 6 configurations from model
+# 2024-10-07 21:41:47 UTC: Computing similarity of configurations ......... DONE
+# 2024-10-07 21:41:47 UTC: Configurations for the race n 2 (elite configurations listed first, then new configurations):
+   .ID. Ag Tg Xg Zg ground_coverage avg_height_ratio .PARENT.
+1     1  2 17  3  3              63               14       NA
+7     7  2  9  6  2              14               83       NA
+2     2  1 10  9  3              82               17       NA
+8     8  3 19  5  2              65               42        7
+9     9  3  9  5  3              58                9        1
+10   10  2 18  3  3              67               13        1
+11   11  3 15  4  2              45               76        7
+12   12  1 10  3  2              21               65        7
+13   13  1  3  9  2               5               70        7
+# 2024-10-07 21:41:47 UTC: Launch race
+# Markers:
+     x No test is performed.
+     c Configurations are discarded only due to capping.
+     - The test is performed and some configurations are discarded.
+     = The test is performed but no configuration is discarded.
+     ! The test is performed and configurations could be discarded but elite configurations are preserved.
+     . All alive configurations are elite and nothing is discarded
+
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+| |   Instance|      Alive|       Best|      Mean best| Exp so far|  W time|  rho|KenW|  Qvar|
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+# 2024-10-07 21:41:47 UTC: /AutoIG/scripts/target-runner 1 1 1068608867 dummy   -Ag 2 -Tg 17 -Xg 3 -Zg 3 -ground_coverage 63 -avg_height_ratio 14
+# 2024-10-07 21:41:47 UTC: DONE (1) Elapsed wall-clock seconds: 0.14
+-1 2.21
+# 2024-10-07 21:41:47 UTC: /AutoIG/scripts/target-runner 7 1 1068608867 dummy   -Ag 2 -Tg 9 -Xg 6 -Zg 2 -ground_coverage 14 -avg_height_ratio 83
+# 2024-10-07 21:41:47 UTC: DONE (7) Elapsed wall-clock seconds: 0.14
+-1 6.08
+# 2024-10-07 21:41:47 UTC: /AutoIG/scripts/target-runner 2 1 1068608867 dummy   -Ag 1 -Tg 10 -Xg 9 -Zg 3 -ground_coverage 82 -avg_height_ratio 17
+# 2024-10-07 21:41:47 UTC: DONE (2) Elapsed wall-clock seconds: 0.14
+2 5.15
+# 2024-10-07 21:41:47 UTC: /AutoIG/scripts/target-runner 8 1 1068608867 dummy   -Ag 3 -Tg 19 -Xg 5 -Zg 2 -ground_coverage 65 -avg_height_ratio 42
+# 2024-10-07 21:41:48 UTC: DONE (8) Elapsed wall-clock seconds: 0.14
+0 8.11
+# 2024-10-07 21:41:48 UTC: /AutoIG/scripts/target-runner 9 1 1068608867 dummy   -Ag 3 -Tg 9 -Xg 5 -Zg 3 -ground_coverage 58 -avg_height_ratio 9
+# 2024-10-07 21:41:48 UTC: DONE (9) Elapsed wall-clock seconds: 0.14
+0 8.06
+# 2024-10-07 21:41:48 UTC: /AutoIG/scripts/target-runner 10 1 1068608867 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 67 -avg_height_ratio 13
+# 2024-10-07 21:41:48 UTC: DONE (10) Elapsed wall-clock seconds: 0.14
+-1 3.8
+# 2024-10-07 21:41:48 UTC: /AutoIG/scripts/target-runner 11 1 1068608867 dummy   -Ag 3 -Tg 15 -Xg 4 -Zg 2 -ground_coverage 45 -avg_height_ratio 76
+# 2024-10-07 21:41:48 UTC: DONE (11) Elapsed wall-clock seconds: 0.13
+Inf 1.43
+# 2024-10-07 21:41:48 UTC: /AutoIG/scripts/target-runner 12 1 1068608867 dummy   -Ag 1 -Tg 10 -Xg 3 -Zg 2 -ground_coverage 21 -avg_height_ratio 65
+# 2024-10-07 21:41:48 UTC: DONE (12) Elapsed wall-clock seconds: 0.14
+-1 3.43
+# 2024-10-07 21:41:48 UTC: /AutoIG/scripts/target-runner 13 1 1068608867 dummy   -Ag 1 -Tg 3 -Xg 9 -Zg 2 -ground_coverage 5 -avg_height_ratio 70
+# 2024-10-07 21:41:48 UTC: DONE (13) Elapsed wall-clock seconds: 0.14
+-1 3.67
+# 2024-10-07 21:41:48 UTC: Immediately rejected configurations: 11
+|x|          6|          8|          1|   -1.000000000|          9|00:00:01|   NA|  NA|    NA|
+# 2024-10-07 21:41:48 UTC: /AutoIG/scripts/target-runner 8 1 601225362 dummy   -Ag 3 -Tg 19 -Xg 5 -Zg 2 -ground_coverage 65 -avg_height_ratio 42
+# 2024-10-07 21:41:48 UTC: DONE (8) Elapsed wall-clock seconds: 0.14
+0 6.6
+# 2024-10-07 21:41:48 UTC: /AutoIG/scripts/target-runner 9 1 601225362 dummy   -Ag 3 -Tg 9 -Xg 5 -Zg 3 -ground_coverage 58 -avg_height_ratio 9
+# 2024-10-07 21:41:49 UTC: DONE (9) Elapsed wall-clock seconds: 0.14
+0 6.57
+# 2024-10-07 21:41:49 UTC: /AutoIG/scripts/target-runner 10 1 601225362 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 67 -avg_height_ratio 13
+# 2024-10-07 21:41:49 UTC: DONE (10) Elapsed wall-clock seconds: 0.14
+-1 2.23
+# 2024-10-07 21:41:49 UTC: /AutoIG/scripts/target-runner 12 1 601225362 dummy   -Ag 1 -Tg 10 -Xg 3 -Zg 2 -ground_coverage 21 -avg_height_ratio 65
+# 2024-10-07 21:41:49 UTC: DONE (12) Elapsed wall-clock seconds: 0.14
+-1 2.01
+# 2024-10-07 21:41:49 UTC: /AutoIG/scripts/target-runner 13 1 601225362 dummy   -Ag 1 -Tg 3 -Xg 9 -Zg 2 -ground_coverage 5 -avg_height_ratio 70
+# 2024-10-07 21:41:49 UTC: DONE (13) Elapsed wall-clock seconds: 0.14
+-1 1.77
+|x|          2|          8|          1|   -1.000000000|         14|00:00:00|+0.58|0.79|0.6841|
+# 2024-10-07 21:41:49 UTC: /AutoIG/scripts/target-runner 8 1 510416220 dummy   -Ag 3 -Tg 19 -Xg 5 -Zg 2 -ground_coverage 65 -avg_height_ratio 42
+# 2024-10-07 21:41:49 UTC: DONE (8) Elapsed wall-clock seconds: 0.14
+0 6.58
+# 2024-10-07 21:41:49 UTC: /AutoIG/scripts/target-runner 9 1 510416220 dummy   -Ag 3 -Tg 9 -Xg 5 -Zg 3 -ground_coverage 58 -avg_height_ratio 9
+# 2024-10-07 21:41:49 UTC: DONE (9) Elapsed wall-clock seconds: 0.14
+0 6.57
+# 2024-10-07 21:41:49 UTC: /AutoIG/scripts/target-runner 10 1 510416220 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 67 -avg_height_ratio 13
+# 2024-10-07 21:41:49 UTC: DONE (10) Elapsed wall-clock seconds: 0.14
+-1 2.34
+# 2024-10-07 21:41:49 UTC: /AutoIG/scripts/target-runner 12 1 510416220 dummy   -Ag 1 -Tg 10 -Xg 3 -Zg 2 -ground_coverage 21 -avg_height_ratio 65
+# 2024-10-07 21:41:50 UTC: DONE (12) Elapsed wall-clock seconds: 0.14
+-1 2.01
+# 2024-10-07 21:41:50 UTC: /AutoIG/scripts/target-runner 13 1 510416220 dummy   -Ag 1 -Tg 3 -Xg 9 -Zg 2 -ground_coverage 5 -avg_height_ratio 70
+# 2024-10-07 21:41:50 UTC: DONE (13) Elapsed wall-clock seconds: 0.16
+-1 1.77
+|x|          3|          8|          1|   -1.000000000|         19|00:00:00|+0.73|0.82|0.4560|
+# 2024-10-07 21:41:50 UTC: /AutoIG/scripts/target-runner 8 1 1489266180 dummy   -Ag 3 -Tg 19 -Xg 5 -Zg 2 -ground_coverage 65 -avg_height_ratio 42
+# 2024-10-07 21:41:50 UTC: DONE (8) Elapsed wall-clock seconds: 0.14
+0 6.53
+# 2024-10-07 21:41:50 UTC: /AutoIG/scripts/target-runner 9 1 1489266180 dummy   -Ag 3 -Tg 9 -Xg 5 -Zg 3 -ground_coverage 58 -avg_height_ratio 9
+# 2024-10-07 21:41:50 UTC: DONE (9) Elapsed wall-clock seconds: 0.14
+0 6.55
+# 2024-10-07 21:41:50 UTC: /AutoIG/scripts/target-runner 10 1 1489266180 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 67 -avg_height_ratio 13
+# 2024-10-07 21:41:50 UTC: DONE (10) Elapsed wall-clock seconds: 0.14
+-1 2.31
+# 2024-10-07 21:41:50 UTC: /AutoIG/scripts/target-runner 12 1 1489266180 dummy   -Ag 1 -Tg 10 -Xg 3 -Zg 2 -ground_coverage 21 -avg_height_ratio 65
+# 2024-10-07 21:41:50 UTC: DONE (12) Elapsed wall-clock seconds: 0.14
+-1 2.03
+# 2024-10-07 21:41:50 UTC: /AutoIG/scripts/target-runner 13 1 1489266180 dummy   -Ag 1 -Tg 3 -Xg 9 -Zg 2 -ground_coverage 5 -avg_height_ratio 70
+# 2024-10-07 21:41:50 UTC: DONE (13) Elapsed wall-clock seconds: 0.14
+-1 1.78
+|x|          4|          8|          1|   -1.000000000|         24|00:00:00|+0.72|0.79|0.4560|
+# 2024-10-07 21:41:50 UTC: /AutoIG/scripts/target-runner 8 1 1965286212 dummy   -Ag 3 -Tg 19 -Xg 5 -Zg 2 -ground_coverage 65 -avg_height_ratio 42
+# 2024-10-07 21:41:51 UTC: DONE (8) Elapsed wall-clock seconds: 0.14
+0 6.63
+# 2024-10-07 21:41:51 UTC: /AutoIG/scripts/target-runner 9 1 1965286212 dummy   -Ag 3 -Tg 9 -Xg 5 -Zg 3 -ground_coverage 58 -avg_height_ratio 9
+# 2024-10-07 21:41:51 UTC: DONE (9) Elapsed wall-clock seconds: 0.14
+0 6.55
+# 2024-10-07 21:41:51 UTC: /AutoIG/scripts/target-runner 10 1 1965286212 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 67 -avg_height_ratio 13
+# 2024-10-07 21:41:51 UTC: DONE (10) Elapsed wall-clock seconds: 0.14
+-1 2.28
+# 2024-10-07 21:41:51 UTC: /AutoIG/scripts/target-runner 12 1 1965286212 dummy   -Ag 1 -Tg 10 -Xg 3 -Zg 2 -ground_coverage 21 -avg_height_ratio 65
+# 2024-10-07 21:41:51 UTC: DONE (12) Elapsed wall-clock seconds: 0.14
+-1 2.01
+# 2024-10-07 21:41:51 UTC: /AutoIG/scripts/target-runner 13 1 1965286212 dummy   -Ag 1 -Tg 3 -Xg 9 -Zg 2 -ground_coverage 5 -avg_height_ratio 70
+# 2024-10-07 21:41:51 UTC: DONE (13) Elapsed wall-clock seconds: 0.14
+-1 1.75
+|-|          1|          6|          1|   -1.000000000|         29|00:00:00|+0.25|0.40|0.2500|
+# 2024-10-07 21:41:51 UTC: /AutoIG/scripts/target-runner 10 1 1222707704 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 67 -avg_height_ratio 13
+# 2024-10-07 21:41:51 UTC: DONE (10) Elapsed wall-clock seconds: 0.14
+-1 2.3
+# 2024-10-07 21:41:51 UTC: /AutoIG/scripts/target-runner 12 1 1222707704 dummy   -Ag 1 -Tg 10 -Xg 3 -Zg 2 -ground_coverage 21 -avg_height_ratio 65
+# 2024-10-07 21:41:51 UTC: DONE (12) Elapsed wall-clock seconds: 0.13
+-1 1.99
+# 2024-10-07 21:41:51 UTC: /AutoIG/scripts/target-runner 13 1 1222707704 dummy   -Ag 1 -Tg 3 -Xg 9 -Zg 2 -ground_coverage 5 -avg_height_ratio 70
+# 2024-10-07 21:41:52 UTC: DONE (13) Elapsed wall-clock seconds: 0.14
+-1 1.75
+|-|          5|          5|          1|   -1.000000000|         32|00:00:00|+0.00|0.17|0.1333|
+# 2024-10-07 21:41:52 UTC: /AutoIG/scripts/target-runner 1 1 735527639 dummy   -Ag 2 -Tg 17 -Xg 3 -Zg 3 -ground_coverage 63 -avg_height_ratio 14
+# 2024-10-07 21:41:52 UTC: DONE (1) Elapsed wall-clock seconds: 0.14
+-1 2.19
+# 2024-10-07 21:41:52 UTC: /AutoIG/scripts/target-runner 7 1 735527639 dummy   -Ag 2 -Tg 9 -Xg 6 -Zg 2 -ground_coverage 14 -avg_height_ratio 83
+# 2024-10-07 21:41:52 UTC: DONE (7) Elapsed wall-clock seconds: 0.14
+-1 4.43
+# 2024-10-07 21:41:52 UTC: /AutoIG/scripts/target-runner 10 1 735527639 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 67 -avg_height_ratio 13
+# 2024-10-07 21:41:52 UTC: DONE (10) Elapsed wall-clock seconds: 0.14
+-1 2.33
+# 2024-10-07 21:41:52 UTC: /AutoIG/scripts/target-runner 12 1 735527639 dummy   -Ag 1 -Tg 10 -Xg 3 -Zg 2 -ground_coverage 21 -avg_height_ratio 65
+# 2024-10-07 21:41:52 UTC: DONE (12) Elapsed wall-clock seconds: 0.14
+-1 2.0
+# 2024-10-07 21:41:52 UTC: /AutoIG/scripts/target-runner 13 1 735527639 dummy   -Ag 1 -Tg 3 -Xg 9 -Zg 2 -ground_coverage 5 -avg_height_ratio 70
+# 2024-10-07 21:41:52 UTC: DONE (13) Elapsed wall-clock seconds: 0.14
+-1 1.82
+|=|          7|          5|          1|   -1.000000000|         37|00:00:00|+0.00|0.14|0.1143|
+# 2024-10-07 21:41:52 UTC: /AutoIG/scripts/target-runner 1 1 61910261 dummy   -Ag 2 -Tg 17 -Xg 3 -Zg 3 -ground_coverage 63 -avg_height_ratio 14
+# 2024-10-07 21:41:52 UTC: DONE (1) Elapsed wall-clock seconds: 0.14
+-1 2.21
+# 2024-10-07 21:41:52 UTC: /AutoIG/scripts/target-runner 7 1 61910261 dummy   -Ag 2 -Tg 9 -Xg 6 -Zg 2 -ground_coverage 14 -avg_height_ratio 83
+# 2024-10-07 21:41:53 UTC: DONE (7) Elapsed wall-clock seconds: 0.14
+-1 6.7
+# 2024-10-07 21:41:53 UTC: /AutoIG/scripts/target-runner 10 1 61910261 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 67 -avg_height_ratio 13
+# 2024-10-07 21:41:53 UTC: DONE (10) Elapsed wall-clock seconds: 0.14
+-1 2.3
+# 2024-10-07 21:41:53 UTC: /AutoIG/scripts/target-runner 12 1 61910261 dummy   -Ag 1 -Tg 10 -Xg 3 -Zg 2 -ground_coverage 21 -avg_height_ratio 65
+# 2024-10-07 21:41:53 UTC: DONE (12) Elapsed wall-clock seconds: 0.14
+-1 2.0
+# 2024-10-07 21:41:53 UTC: /AutoIG/scripts/target-runner 13 1 61910261 dummy   -Ag 1 -Tg 3 -Xg 9 -Zg 2 -ground_coverage 5 -avg_height_ratio 70
+# 2024-10-07 21:41:53 UTC: DONE (13) Elapsed wall-clock seconds: 0.14
+-1 1.77
+|=|          8|          5|          1|   -1.000000000|         42|00:00:00|+0.00|0.12|0.1000|
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+# Stopped because tests without elimination (2) >= elitistLimit (2)
+Best-so-far configuration:           1    mean value:    -1.000000000
+Description of the best-so-far configuration:
+  .ID. Ag Tg Xg Zg ground_coverage avg_height_ratio .PARENT.
+1    1  2 17  3  3              63               14       NA
+
+# 2024-10-07 21:41:53 UTC: Extracting elites
+# 2024-10-07 21:41:53 UTC: Elite configurations (first number is the configuration ID; listed from best to worst according to the sum of ranks):
+   .ID. Ag Tg Xg Zg ground_coverage avg_height_ratio .PARENT. .ALIVE. .RANK. .WEIGHT.
+1     1  2 17  3  3              63               14       NA    TRUE   23.5      0.4
+10   10  2 18  3  3              67               13        1    TRUE   23.5      0.3
+12   12  1 10  3  2              21               65        7    TRUE   23.5      0.2
+13   13  1  3  9  2               5               70        7    TRUE   23.5      0.1
+# 2024-10-07 21:41:53 UTC: End of iteration 2
+# 2024-10-07 21:41:53 UTC: Iteration 3 of 4
+# experimentsUsedSoFar: 65
+# remainingBudget: 115
+# currentBudget: 57
+# nbConfigurations: 9
+# 2024-10-07 21:41:53 UTC: Update model
+# Model:
+$Ag
+$Ag$`1`
+[1] 0.5673004 2.0000000
+
+$Ag$`10`
+[1] 0.5673004 2.0000000
+
+$Ag$`12`
+[1] 0.5673004 1.0000000
+
+$Ag$`13`
+[1] 0.5673004 1.0000000
+
+
+$Tg
+$Tg$`1`
+[1]  5.389354 17.000000
+
+$Tg$`10`
+[1]  5.389354 18.000000
+
+$Tg$`12`
+[1]  5.389354 10.000000
+
+$Tg$`13`
+[1] 5.389354 3.000000
+
+
+$Xg
+$Xg$`1`
+[1] 1.985552 3.000000
+
+$Xg$`10`
+[1] 1.985552 3.000000
+
+$Xg$`12`
+[1] 1.985552 3.000000
+
+$Xg$`13`
+[1] 1.985552 9.000000
+
+
+$Zg
+$Zg$`1`
+[1] 0.2836502 3.0000000
+
+$Zg$`10`
+[1] 0.2836502 3.0000000
+
+$Zg$`12`
+[1] 0.2836502 2.0000000
+
+$Zg$`13`
+[1] 0.2836502 2.0000000
+
+
+$ground_coverage
+$ground_coverage$`1`
+[1] 28.08137 63.00000
+
+$ground_coverage$`10`
+[1] 28.08137 67.00000
+
+$ground_coverage$`12`
+[1] 28.08137 21.00000
+
+$ground_coverage$`13`
+[1] 28.08137  5.00000
+
+
+$avg_height_ratio
+$avg_height_ratio$`1`
+[1] 28.36502 14.00000
+
+$avg_height_ratio$`10`
+[1] 28.36502 13.00000
+
+$avg_height_ratio$`12`
+[1] 28.36502 65.00000
+
+$avg_height_ratio$`13`
+[1] 28.36502 70.00000
+
+
+# 2024-10-07 21:41:53 UTC: Sample 5 configurations from model
+# 2024-10-07 21:41:53 UTC: Computing similarity of configurations ......... DONE
+# 2024-10-07 21:41:53 UTC: Configurations for the race n 3 (elite configurations listed first, then new configurations):
+   .ID. Ag Tg Xg Zg ground_coverage avg_height_ratio .PARENT.
+1     1  2 17  3  3              63               14       NA
+10   10  2 18  3  3              67               13        1
+12   12  1 10  3  2              21               65        7
+13   13  1  3  9  2               5               70        7
+14   14  3 14  4  3              62               47        1
+15   15  1 14  7  3              74               81        1
+16   16  1 18  4  3              35               27        1
+17   17  2 15  6  3              40               11       10
+18   18  1  4  8  2              13               62       13
+# 2024-10-07 21:41:53 UTC: Launch race
+# Markers:
+     x No test is performed.
+     c Configurations are discarded only due to capping.
+     - The test is performed and some configurations are discarded.
+     = The test is performed but no configuration is discarded.
+     ! The test is performed and configurations could be discarded but elite configurations are preserved.
+     . All alive configurations are elite and nothing is discarded
+
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+| |   Instance|      Alive|       Best|      Mean best| Exp so far|  W time|  rho|KenW|  Qvar|
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+# 2024-10-07 21:41:53 UTC: /AutoIG/scripts/target-runner 1 1 2073674354 dummy   -Ag 2 -Tg 17 -Xg 3 -Zg 3 -ground_coverage 63 -avg_height_ratio 14
+# 2024-10-07 21:41:53 UTC: DONE (1) Elapsed wall-clock seconds: 0.14
+-1 2.2
+# 2024-10-07 21:41:53 UTC: /AutoIG/scripts/target-runner 10 1 2073674354 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 67 -avg_height_ratio 13
+# 2024-10-07 21:41:53 UTC: DONE (10) Elapsed wall-clock seconds: 0.14
+-1 2.3
+# 2024-10-07 21:41:53 UTC: /AutoIG/scripts/target-runner 12 1 2073674354 dummy   -Ag 1 -Tg 10 -Xg 3 -Zg 2 -ground_coverage 21 -avg_height_ratio 65
+# 2024-10-07 21:41:54 UTC: DONE (12) Elapsed wall-clock seconds: 0.14
+-1 2.05
+# 2024-10-07 21:41:54 UTC: /AutoIG/scripts/target-runner 13 1 2073674354 dummy   -Ag 1 -Tg 3 -Xg 9 -Zg 2 -ground_coverage 5 -avg_height_ratio 70
+# 2024-10-07 21:41:54 UTC: DONE (13) Elapsed wall-clock seconds: 0.13
+-1 1.81
+# 2024-10-07 21:41:54 UTC: /AutoIG/scripts/target-runner 14 1 2073674354 dummy   -Ag 3 -Tg 14 -Xg 4 -Zg 3 -ground_coverage 62 -avg_height_ratio 47
+# 2024-10-07 21:41:54 UTC: DONE (14) Elapsed wall-clock seconds: 0.14
+-1 7.54
+# 2024-10-07 21:41:54 UTC: /AutoIG/scripts/target-runner 15 1 2073674354 dummy   -Ag 1 -Tg 14 -Xg 7 -Zg 3 -ground_coverage 74 -avg_height_ratio 81
+# 2024-10-07 21:41:54 UTC: DONE (15) Elapsed wall-clock seconds: 0.14
+0 8.34
+# 2024-10-07 21:41:54 UTC: /AutoIG/scripts/target-runner 16 1 2073674354 dummy   -Ag 1 -Tg 18 -Xg 4 -Zg 3 -ground_coverage 35 -avg_height_ratio 27
+# 2024-10-07 21:41:54 UTC: DONE (16) Elapsed wall-clock seconds: 0.14
+Inf 1.46
+# 2024-10-07 21:41:54 UTC: /AutoIG/scripts/target-runner 17 1 2073674354 dummy   -Ag 2 -Tg 15 -Xg 6 -Zg 3 -ground_coverage 40 -avg_height_ratio 11
+# 2024-10-07 21:41:54 UTC: DONE (17) Elapsed wall-clock seconds: 0.14
+0 8.09
+# 2024-10-07 21:41:54 UTC: /AutoIG/scripts/target-runner 18 1 2073674354 dummy   -Ag 1 -Tg 4 -Xg 8 -Zg 2 -ground_coverage 13 -avg_height_ratio 62
+# 2024-10-07 21:41:54 UTC: DONE (18) Elapsed wall-clock seconds: 0.14
+-1 4.02
+# 2024-10-07 21:41:54 UTC: Immediately rejected configurations: 16
+|x|          9|          8|          1|   -1.000000000|          9|00:00:01|   NA|  NA|    NA|
+# 2024-10-07 21:41:54 UTC: /AutoIG/scripts/target-runner 14 1 510416220 dummy   -Ag 3 -Tg 14 -Xg 4 -Zg 3 -ground_coverage 62 -avg_height_ratio 47
+# 2024-10-07 21:41:54 UTC: DONE (14) Elapsed wall-clock seconds: 0.14
+0 6.57
+# 2024-10-07 21:41:54 UTC: /AutoIG/scripts/target-runner 15 1 510416220 dummy   -Ag 1 -Tg 14 -Xg 7 -Zg 3 -ground_coverage 74 -avg_height_ratio 81
+# 2024-10-07 21:41:55 UTC: DONE (15) Elapsed wall-clock seconds: 0.14
+0 6.59
+# 2024-10-07 21:41:55 UTC: /AutoIG/scripts/target-runner 17 1 510416220 dummy   -Ag 2 -Tg 15 -Xg 6 -Zg 3 -ground_coverage 40 -avg_height_ratio 11
+# 2024-10-07 21:41:55 UTC: DONE (17) Elapsed wall-clock seconds: 0.14
+0 6.64
+# 2024-10-07 21:41:55 UTC: /AutoIG/scripts/target-runner 18 1 510416220 dummy   -Ag 1 -Tg 4 -Xg 8 -Zg 2 -ground_coverage 13 -avg_height_ratio 62
+# 2024-10-07 21:41:55 UTC: DONE (18) Elapsed wall-clock seconds: 0.14
+-1 2.27
+|x|          3|          8|          1|   -1.000000000|         13|00:00:00|+0.74|0.87|0.2228|
+# 2024-10-07 21:41:55 UTC: /AutoIG/scripts/target-runner 14 1 1965286212 dummy   -Ag 3 -Tg 14 -Xg 4 -Zg 3 -ground_coverage 62 -avg_height_ratio 47
+# 2024-10-07 21:41:55 UTC: DONE (14) Elapsed wall-clock seconds: 0.14
+-1 5.86
+# 2024-10-07 21:41:55 UTC: /AutoIG/scripts/target-runner 15 1 1965286212 dummy   -Ag 1 -Tg 14 -Xg 7 -Zg 3 -ground_coverage 74 -avg_height_ratio 81
+# 2024-10-07 21:41:55 UTC: DONE (15) Elapsed wall-clock seconds: 0.14
+-1 6.36
+# 2024-10-07 21:41:55 UTC: /AutoIG/scripts/target-runner 17 1 1965286212 dummy   -Ag 2 -Tg 15 -Xg 6 -Zg 3 -ground_coverage 40 -avg_height_ratio 11
+# 2024-10-07 21:41:55 UTC: DONE (17) Elapsed wall-clock seconds: 0.14
+0 6.53
+# 2024-10-07 21:41:55 UTC: /AutoIG/scripts/target-runner 18 1 1965286212 dummy   -Ag 1 -Tg 4 -Xg 8 -Zg 2 -ground_coverage 13 -avg_height_ratio 62
+# 2024-10-07 21:41:56 UTC: DONE (18) Elapsed wall-clock seconds: 0.14
+-1 2.05
+|x|          1|          8|          1|   -1.000000000|         17|00:00:00|+0.62|0.75|0.3243|
+# 2024-10-07 21:41:56 UTC: /AutoIG/scripts/target-runner 14 1 1068608867 dummy   -Ag 3 -Tg 14 -Xg 4 -Zg 3 -ground_coverage 62 -avg_height_ratio 47
+# 2024-10-07 21:41:56 UTC: DONE (14) Elapsed wall-clock seconds: 0.14
+0 6.58
+# 2024-10-07 21:41:56 UTC: /AutoIG/scripts/target-runner 15 1 1068608867 dummy   -Ag 1 -Tg 14 -Xg 7 -Zg 3 -ground_coverage 74 -avg_height_ratio 81
+# 2024-10-07 21:41:56 UTC: DONE (15) Elapsed wall-clock seconds: 0.14
+0 6.6
+# 2024-10-07 21:41:56 UTC: /AutoIG/scripts/target-runner 17 1 1068608867 dummy   -Ag 2 -Tg 15 -Xg 6 -Zg 3 -ground_coverage 40 -avg_height_ratio 11
+# 2024-10-07 21:41:56 UTC: DONE (17) Elapsed wall-clock seconds: 0.14
+0 6.6
+# 2024-10-07 21:41:56 UTC: /AutoIG/scripts/target-runner 18 1 1068608867 dummy   -Ag 1 -Tg 4 -Xg 8 -Zg 2 -ground_coverage 13 -avg_height_ratio 62
+# 2024-10-07 21:41:56 UTC: DONE (18) Elapsed wall-clock seconds: 0.14
+-1 2.27
+|x|          6|          8|          1|   -1.000000000|         21|00:00:00|+0.69|0.77|0.2740|
+# 2024-10-07 21:41:56 UTC: /AutoIG/scripts/target-runner 14 1 61910261 dummy   -Ag 3 -Tg 14 -Xg 4 -Zg 3 -ground_coverage 62 -avg_height_ratio 47
+# 2024-10-07 21:41:56 UTC: DONE (14) Elapsed wall-clock seconds: 0.14
+-1 6.34
+# 2024-10-07 21:41:56 UTC: /AutoIG/scripts/target-runner 15 1 61910261 dummy   -Ag 1 -Tg 14 -Xg 7 -Zg 3 -ground_coverage 74 -avg_height_ratio 81
+# 2024-10-07 21:41:56 UTC: DONE (15) Elapsed wall-clock seconds: 0.14
+2 5.11
+# 2024-10-07 21:41:56 UTC: /AutoIG/scripts/target-runner 17 1 61910261 dummy   -Ag 2 -Tg 15 -Xg 6 -Zg 3 -ground_coverage 40 -avg_height_ratio 11
+# 2024-10-07 21:41:57 UTC: DONE (17) Elapsed wall-clock seconds: 0.14
+0 6.55
+# 2024-10-07 21:41:57 UTC: /AutoIG/scripts/target-runner 18 1 61910261 dummy   -Ag 1 -Tg 4 -Xg 8 -Zg 2 -ground_coverage 13 -avg_height_ratio 62
+# 2024-10-07 21:41:57 UTC: DONE (18) Elapsed wall-clock seconds: 0.14
+-1 2.07
+|-|          8|          5|          1|   -1.000000000|         25|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:41:57 UTC: /AutoIG/scripts/target-runner 18 1 735527639 dummy   -Ag 1 -Tg 4 -Xg 8 -Zg 2 -ground_coverage 13 -avg_height_ratio 62
+# 2024-10-07 21:41:57 UTC: DONE (18) Elapsed wall-clock seconds: 0.14
+-1 2.05
+|=|          7|          5|          1|   -1.000000000|         26|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:41:57 UTC: /AutoIG/scripts/target-runner 18 1 1489266180 dummy   -Ag 1 -Tg 4 -Xg 8 -Zg 2 -ground_coverage 13 -avg_height_ratio 62
+# 2024-10-07 21:41:57 UTC: DONE (18) Elapsed wall-clock seconds: 0.14
+-1 2.14
+|=|          4|          5|          1|   -1.000000000|         27|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:41:57 UTC: /AutoIG/scripts/target-runner 18 1 601225362 dummy   -Ag 1 -Tg 4 -Xg 8 -Zg 2 -ground_coverage 13 -avg_height_ratio 62
+# 2024-10-07 21:41:57 UTC: DONE (18) Elapsed wall-clock seconds: 0.14
+-1 2.26
+|=|          2|          5|          1|   -1.000000000|         28|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:41:57 UTC: /AutoIG/scripts/target-runner 18 1 1222707704 dummy   -Ag 1 -Tg 4 -Xg 8 -Zg 2 -ground_coverage 13 -avg_height_ratio 62
+# 2024-10-07 21:41:57 UTC: DONE (18) Elapsed wall-clock seconds: 0.14
+-1 2.05
+|=|          5|          5|          1|   -1.000000000|         29|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:41:57 UTC: /AutoIG/scripts/target-runner 1 1 285596038 dummy   -Ag 2 -Tg 17 -Xg 3 -Zg 3 -ground_coverage 63 -avg_height_ratio 14
+# 2024-10-07 21:41:57 UTC: DONE (1) Elapsed wall-clock seconds: 0.14
+-1 2.28
+# 2024-10-07 21:41:57 UTC: /AutoIG/scripts/target-runner 10 1 285596038 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 67 -avg_height_ratio 13
+# 2024-10-07 21:41:58 UTC: DONE (10) Elapsed wall-clock seconds: 0.16
+-1 2.2
+# 2024-10-07 21:41:58 UTC: /AutoIG/scripts/target-runner 12 1 285596038 dummy   -Ag 1 -Tg 10 -Xg 3 -Zg 2 -ground_coverage 21 -avg_height_ratio 65
+# 2024-10-07 21:41:58 UTC: DONE (12) Elapsed wall-clock seconds: 0.14
+-1 1.99
+# 2024-10-07 21:41:58 UTC: /AutoIG/scripts/target-runner 13 1 285596038 dummy   -Ag 1 -Tg 3 -Xg 9 -Zg 2 -ground_coverage 5 -avg_height_ratio 70
+# 2024-10-07 21:41:58 UTC: DONE (13) Elapsed wall-clock seconds: 0.14
+-1 1.77
+# 2024-10-07 21:41:58 UTC: /AutoIG/scripts/target-runner 18 1 285596038 dummy   -Ag 1 -Tg 4 -Xg 8 -Zg 2 -ground_coverage 13 -avg_height_ratio 62
+# 2024-10-07 21:41:58 UTC: DONE (18) Elapsed wall-clock seconds: 0.14
+-1 2.27
+|=|         10|          5|          1|   -1.000000000|         34|00:00:00|+1.00|1.00|0.0000|
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+# Stopped because tests without elimination (2) >= elitistLimit (2)
+Best-so-far configuration:           1    mean value:    -1.000000000
+Description of the best-so-far configuration:
+  .ID. Ag Tg Xg Zg ground_coverage avg_height_ratio .PARENT.
+1    1  2 17  3  3              63               14       NA
+
+# 2024-10-07 21:41:58 UTC: Extracting elites
+# 2024-10-07 21:41:58 UTC: Elite configurations (first number is the configuration ID; listed from best to worst according to the sum of ranks):
+   .ID. Ag Tg Xg Zg ground_coverage avg_height_ratio .PARENT. .ALIVE. .RANK. .WEIGHT.
+1     1  2 17  3  3              63               14       NA    TRUE     30      0.4
+10   10  2 18  3  3              67               13        1    TRUE     30      0.3
+12   12  1 10  3  2              21               65        7    TRUE     30      0.2
+13   13  1  3  9  2               5               70        7    TRUE     30      0.1
+# 2024-10-07 21:41:58 UTC: End of iteration 3
+# 2024-10-07 21:41:58 UTC: Iteration 4 of 4
+# experimentsUsedSoFar: 99
+# remainingBudget: 81
+# currentBudget: 81
+# nbConfigurations: 11
+# 2024-10-07 21:41:58 UTC: Update model
+# Model:
+$Ag
+$Ag$`1`
+[1] 0.4101696 2.0000000
+
+$Ag$`10`
+[1] 0.4101696 2.0000000
+
+$Ag$`12`
+[1] 0.4101696 1.0000000
+
+$Ag$`13`
+[1] 0.4101696 1.0000000
+
+
+$Tg
+$Tg$`1`
+[1]  3.896611 17.000000
+
+$Tg$`10`
+[1]  3.896611 18.000000
+
+$Tg$`12`
+[1]  3.896611 10.000000
+
+$Tg$`13`
+[1] 3.896611 3.000000
+
+
+$Xg
+$Xg$`1`
+[1] 1.435594 3.000000
+
+$Xg$`10`
+[1] 1.435594 3.000000
+
+$Xg$`12`
+[1] 1.435594 3.000000
+
+$Xg$`13`
+[1] 1.435594 9.000000
+
+
+$Zg
+$Zg$`1`
+[1] 0.2050848 3.0000000
+
+$Zg$`10`
+[1] 0.2050848 3.0000000
+
+$Zg$`12`
+[1] 0.2050848 2.0000000
+
+$Zg$`13`
+[1] 0.2050848 2.0000000
+
+
+$ground_coverage
+$ground_coverage$`1`
+[1] 20.30339 63.00000
+
+$ground_coverage$`10`
+[1] 20.30339 67.00000
+
+$ground_coverage$`12`
+[1] 20.30339 21.00000
+
+$ground_coverage$`13`
+[1] 20.30339  5.00000
+
+
+$avg_height_ratio
+$avg_height_ratio$`1`
+[1] 20.50848 14.00000
+
+$avg_height_ratio$`10`
+[1] 20.50848 13.00000
+
+$avg_height_ratio$`12`
+[1] 20.50848 65.00000
+
+$avg_height_ratio$`13`
+[1] 20.50848 70.00000
+
+
+# 2024-10-07 21:41:58 UTC: Sample 7 configurations from model
+# 2024-10-07 21:41:58 UTC: Computing similarity of configurations ........... DONE
+# 2024-10-07 21:41:58 UTC: Configurations for the race n 4 (elite configurations listed first, then new configurations):
+   .ID. Ag Tg Xg Zg ground_coverage avg_height_ratio .PARENT.
+1     1  2 17  3  3              63               14       NA
+10   10  2 18  3  3              67               13        1
+12   12  1 10  3  2              21               65        7
+13   13  1  3  9  2               5               70        7
+19   19  1  9  3  2               2               87       12
+20   20  2 18  5  3              68                9       10
+21   21  3 12  3  3              65               12        1
+22   22  2 18  3  3              88               11       10
+23   23  1  9  4  2               8               91       12
+24   24  1 11  4  3              85               48        1
+25   25  2 14  4  3              92               55       10
+# 2024-10-07 21:41:58 UTC: Launch race
+# Markers:
+     x No test is performed.
+     c Configurations are discarded only due to capping.
+     - The test is performed and some configurations are discarded.
+     = The test is performed but no configuration is discarded.
+     ! The test is performed and configurations could be discarded but elite configurations are preserved.
+     . All alive configurations are elite and nothing is discarded
+
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+| |   Instance|      Alive|       Best|      Mean best| Exp so far|  W time|  rho|KenW|  Qvar|
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+# 2024-10-07 21:41:58 UTC: /AutoIG/scripts/target-runner 1 1 813778292 dummy   -Ag 2 -Tg 17 -Xg 3 -Zg 3 -ground_coverage 63 -avg_height_ratio 14
+# 2024-10-07 21:41:58 UTC: DONE (1) Elapsed wall-clock seconds: 0.14
+-1 2.19
+# 2024-10-07 21:41:58 UTC: /AutoIG/scripts/target-runner 10 1 813778292 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 67 -avg_height_ratio 13
+# 2024-10-07 21:41:58 UTC: DONE (10) Elapsed wall-clock seconds: 0.14
+-1 2.3
+# 2024-10-07 21:41:58 UTC: /AutoIG/scripts/target-runner 12 1 813778292 dummy   -Ag 1 -Tg 10 -Xg 3 -Zg 2 -ground_coverage 21 -avg_height_ratio 65
+# 2024-10-07 21:41:59 UTC: DONE (12) Elapsed wall-clock seconds: 0.14
+-1 1.99
+# 2024-10-07 21:41:59 UTC: /AutoIG/scripts/target-runner 13 1 813778292 dummy   -Ag 1 -Tg 3 -Xg 9 -Zg 2 -ground_coverage 5 -avg_height_ratio 70
+# 2024-10-07 21:41:59 UTC: DONE (13) Elapsed wall-clock seconds: 0.14
+-1 1.76
+# 2024-10-07 21:41:59 UTC: /AutoIG/scripts/target-runner 19 1 813778292 dummy   -Ag 1 -Tg 9 -Xg 3 -Zg 2 -ground_coverage 2 -avg_height_ratio 87
+# 2024-10-07 21:41:59 UTC: DONE (19) Elapsed wall-clock seconds: 0.14
+-1 3.42
+# 2024-10-07 21:41:59 UTC: /AutoIG/scripts/target-runner 20 1 813778292 dummy   -Ag 2 -Tg 18 -Xg 5 -Zg 3 -ground_coverage 68 -avg_height_ratio 9
+# 2024-10-07 21:41:59 UTC: DONE (20) Elapsed wall-clock seconds: 0.14
+0 8.05
+# 2024-10-07 21:41:59 UTC: /AutoIG/scripts/target-runner 21 1 813778292 dummy   -Ag 3 -Tg 12 -Xg 3 -Zg 3 -ground_coverage 65 -avg_height_ratio 12
+# 2024-10-07 21:41:59 UTC: DONE (21) Elapsed wall-clock seconds: 0.14
+-1 3.74
+# 2024-10-07 21:41:59 UTC: /AutoIG/scripts/target-runner 22 1 813778292 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 88 -avg_height_ratio 11
+# 2024-10-07 21:41:59 UTC: DONE (22) Elapsed wall-clock seconds: 0.14
+-1 3.79
+# 2024-10-07 21:41:59 UTC: /AutoIG/scripts/target-runner 23 1 813778292 dummy   -Ag 1 -Tg 9 -Xg 4 -Zg 2 -ground_coverage 8 -avg_height_ratio 91
+# 2024-10-07 21:41:59 UTC: DONE (23) Elapsed wall-clock seconds: 0.14
+-1 3.74
+# 2024-10-07 21:41:59 UTC: /AutoIG/scripts/target-runner 24 1 813778292 dummy   -Ag 1 -Tg 11 -Xg 4 -Zg 3 -ground_coverage 85 -avg_height_ratio 48
+# 2024-10-07 21:42:00 UTC: DONE (24) Elapsed wall-clock seconds: 0.14
+-1 3.86
+# 2024-10-07 21:42:00 UTC: /AutoIG/scripts/target-runner 25 1 813778292 dummy   -Ag 2 -Tg 14 -Xg 4 -Zg 3 -ground_coverage 92 -avg_height_ratio 55
+# 2024-10-07 21:42:00 UTC: DONE (25) Elapsed wall-clock seconds: 0.14
+0 7.95
+|x|         11|         11|          1|   -1.000000000|         11|00:00:01|   NA|  NA|    NA|
+# 2024-10-07 21:42:00 UTC: /AutoIG/scripts/target-runner 19 1 510416220 dummy   -Ag 1 -Tg 9 -Xg 3 -Zg 2 -ground_coverage 2 -avg_height_ratio 87
+# 2024-10-07 21:42:00 UTC: DONE (19) Elapsed wall-clock seconds: 0.14
+-1 2.0
+# 2024-10-07 21:42:00 UTC: /AutoIG/scripts/target-runner 20 1 510416220 dummy   -Ag 2 -Tg 18 -Xg 5 -Zg 3 -ground_coverage 68 -avg_height_ratio 9
+# 2024-10-07 21:42:00 UTC: DONE (20) Elapsed wall-clock seconds: 0.14
+0 6.55
+# 2024-10-07 21:42:00 UTC: /AutoIG/scripts/target-runner 21 1 510416220 dummy   -Ag 3 -Tg 12 -Xg 3 -Zg 3 -ground_coverage 65 -avg_height_ratio 12
+# 2024-10-07 21:42:00 UTC: DONE (21) Elapsed wall-clock seconds: 0.14
+-1 2.1
+# 2024-10-07 21:42:00 UTC: /AutoIG/scripts/target-runner 22 1 510416220 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 88 -avg_height_ratio 11
+# 2024-10-07 21:42:00 UTC: DONE (22) Elapsed wall-clock seconds: 0.14
+-1 2.2
+# 2024-10-07 21:42:00 UTC: /AutoIG/scripts/target-runner 23 1 510416220 dummy   -Ag 1 -Tg 9 -Xg 4 -Zg 2 -ground_coverage 8 -avg_height_ratio 91
+# 2024-10-07 21:42:00 UTC: DONE (23) Elapsed wall-clock seconds: 0.14
+-1 2.31
+# 2024-10-07 21:42:00 UTC: /AutoIG/scripts/target-runner 24 1 510416220 dummy   -Ag 1 -Tg 11 -Xg 4 -Zg 3 -ground_coverage 85 -avg_height_ratio 48
+# 2024-10-07 21:42:01 UTC: DONE (24) Elapsed wall-clock seconds: 0.14
+-1 2.34
+# 2024-10-07 21:42:01 UTC: /AutoIG/scripts/target-runner 25 1 510416220 dummy   -Ag 2 -Tg 14 -Xg 4 -Zg 3 -ground_coverage 92 -avg_height_ratio 55
+# 2024-10-07 21:42:01 UTC: DONE (25) Elapsed wall-clock seconds: 0.14
+0 6.53
+|x|          3|         11|          1|   -1.000000000|         18|00:00:01|+1.00|1.00|0.0000|
+# 2024-10-07 21:42:01 UTC: /AutoIG/scripts/target-runner 19 1 1068608867 dummy   -Ag 1 -Tg 9 -Xg 3 -Zg 2 -ground_coverage 2 -avg_height_ratio 87
+# 2024-10-07 21:42:01 UTC: DONE (19) Elapsed wall-clock seconds: 0.14
+-1 2.0
+# 2024-10-07 21:42:01 UTC: /AutoIG/scripts/target-runner 20 1 1068608867 dummy   -Ag 2 -Tg 18 -Xg 5 -Zg 3 -ground_coverage 68 -avg_height_ratio 9
+# 2024-10-07 21:42:01 UTC: DONE (20) Elapsed wall-clock seconds: 0.14
+0 6.54
+# 2024-10-07 21:42:01 UTC: /AutoIG/scripts/target-runner 21 1 1068608867 dummy   -Ag 3 -Tg 12 -Xg 3 -Zg 3 -ground_coverage 65 -avg_height_ratio 12
+# 2024-10-07 21:42:01 UTC: DONE (21) Elapsed wall-clock seconds: 0.14
+-1 2.01
+# 2024-10-07 21:42:01 UTC: /AutoIG/scripts/target-runner 22 1 1068608867 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 88 -avg_height_ratio 11
+# 2024-10-07 21:42:01 UTC: DONE (22) Elapsed wall-clock seconds: 0.14
+-1 2.3
+# 2024-10-07 21:42:01 UTC: /AutoIG/scripts/target-runner 23 1 1068608867 dummy   -Ag 1 -Tg 9 -Xg 4 -Zg 2 -ground_coverage 8 -avg_height_ratio 91
+# 2024-10-07 21:42:01 UTC: DONE (23) Elapsed wall-clock seconds: 0.14
+-1 2.27
+# 2024-10-07 21:42:01 UTC: /AutoIG/scripts/target-runner 24 1 1068608867 dummy   -Ag 1 -Tg 11 -Xg 4 -Zg 3 -ground_coverage 85 -avg_height_ratio 48
+# 2024-10-07 21:42:02 UTC: DONE (24) Elapsed wall-clock seconds: 0.14
+-1 2.32
+# 2024-10-07 21:42:02 UTC: /AutoIG/scripts/target-runner 25 1 1068608867 dummy   -Ag 2 -Tg 14 -Xg 4 -Zg 3 -ground_coverage 92 -avg_height_ratio 55
+# 2024-10-07 21:42:02 UTC: DONE (25) Elapsed wall-clock seconds: 0.14
+0 6.54
+|x|          6|         11|          1|   -1.000000000|         25|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:42:02 UTC: /AutoIG/scripts/target-runner 19 1 1489266180 dummy   -Ag 1 -Tg 9 -Xg 3 -Zg 2 -ground_coverage 2 -avg_height_ratio 87
+# 2024-10-07 21:42:02 UTC: DONE (19) Elapsed wall-clock seconds: 0.14
+-1 1.99
+# 2024-10-07 21:42:02 UTC: /AutoIG/scripts/target-runner 20 1 1489266180 dummy   -Ag 2 -Tg 18 -Xg 5 -Zg 3 -ground_coverage 68 -avg_height_ratio 9
+# 2024-10-07 21:42:02 UTC: DONE (20) Elapsed wall-clock seconds: 0.14
+0 6.54
+# 2024-10-07 21:42:02 UTC: /AutoIG/scripts/target-runner 21 1 1489266180 dummy   -Ag 3 -Tg 12 -Xg 3 -Zg 3 -ground_coverage 65 -avg_height_ratio 12
+# 2024-10-07 21:42:02 UTC: DONE (21) Elapsed wall-clock seconds: 0.14
+-1 1.99
+# 2024-10-07 21:42:02 UTC: /AutoIG/scripts/target-runner 22 1 1489266180 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 88 -avg_height_ratio 11
+# 2024-10-07 21:42:02 UTC: DONE (22) Elapsed wall-clock seconds: 0.14
+-1 2.18
+# 2024-10-07 21:42:02 UTC: /AutoIG/scripts/target-runner 23 1 1489266180 dummy   -Ag 1 -Tg 9 -Xg 4 -Zg 2 -ground_coverage 8 -avg_height_ratio 91
+# 2024-10-07 21:42:02 UTC: DONE (23) Elapsed wall-clock seconds: 0.14
+-1 2.22
+# 2024-10-07 21:42:02 UTC: /AutoIG/scripts/target-runner 24 1 1489266180 dummy   -Ag 1 -Tg 11 -Xg 4 -Zg 3 -ground_coverage 85 -avg_height_ratio 48
+# 2024-10-07 21:42:02 UTC: DONE (24) Elapsed wall-clock seconds: 0.14
+-1 2.34
+# 2024-10-07 21:42:03 UTC: /AutoIG/scripts/target-runner 25 1 1489266180 dummy   -Ag 2 -Tg 14 -Xg 4 -Zg 3 -ground_coverage 92 -avg_height_ratio 55
+# 2024-10-07 21:42:03 UTC: DONE (25) Elapsed wall-clock seconds: 0.14
+0 6.53
+|x|          4|         11|          1|   -1.000000000|         32|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:42:03 UTC: /AutoIG/scripts/target-runner 19 1 1965286212 dummy   -Ag 1 -Tg 9 -Xg 3 -Zg 2 -ground_coverage 2 -avg_height_ratio 87
+# 2024-10-07 21:42:03 UTC: DONE (19) Elapsed wall-clock seconds: 0.14
+-1 1.99
+# 2024-10-07 21:42:03 UTC: /AutoIG/scripts/target-runner 20 1 1965286212 dummy   -Ag 2 -Tg 18 -Xg 5 -Zg 3 -ground_coverage 68 -avg_height_ratio 9
+# 2024-10-07 21:42:03 UTC: DONE (20) Elapsed wall-clock seconds: 0.14
+0 6.55
+# 2024-10-07 21:42:03 UTC: /AutoIG/scripts/target-runner 21 1 1965286212 dummy   -Ag 3 -Tg 12 -Xg 3 -Zg 3 -ground_coverage 65 -avg_height_ratio 12
+# 2024-10-07 21:42:03 UTC: DONE (21) Elapsed wall-clock seconds: 0.14
+-1 2.1
+# 2024-10-07 21:42:03 UTC: /AutoIG/scripts/target-runner 22 1 1965286212 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 88 -avg_height_ratio 11
+# 2024-10-07 21:42:03 UTC: DONE (22) Elapsed wall-clock seconds: 0.14
+-1 2.28
+# 2024-10-07 21:42:03 UTC: /AutoIG/scripts/target-runner 23 1 1965286212 dummy   -Ag 1 -Tg 9 -Xg 4 -Zg 2 -ground_coverage 8 -avg_height_ratio 91
+# 2024-10-07 21:42:03 UTC: DONE (23) Elapsed wall-clock seconds: 0.14
+Inf 0.09
+# 2024-10-07 21:42:03 UTC: /AutoIG/scripts/target-runner 24 1 1965286212 dummy   -Ag 1 -Tg 11 -Xg 4 -Zg 3 -ground_coverage 85 -avg_height_ratio 48
+# 2024-10-07 21:42:03 UTC: DONE (24) Elapsed wall-clock seconds: 0.14
+-1 2.47
+# 2024-10-07 21:42:04 UTC: /AutoIG/scripts/target-runner 25 1 1965286212 dummy   -Ag 2 -Tg 14 -Xg 4 -Zg 3 -ground_coverage 92 -avg_height_ratio 55
+# 2024-10-07 21:42:04 UTC: DONE (25) Elapsed wall-clock seconds: 0.14
+0 6.55
+# 2024-10-07 21:42:04 UTC: Immediately rejected configurations: 23
+|-|          1|          8|          1|   -1.000000000|         39|00:00:01|+1.00|1.00|0.0000|
+# 2024-10-07 21:42:04 UTC: /AutoIG/scripts/target-runner 19 1 2073674354 dummy   -Ag 1 -Tg 9 -Xg 3 -Zg 2 -ground_coverage 2 -avg_height_ratio 87
+# 2024-10-07 21:42:04 UTC: DONE (19) Elapsed wall-clock seconds: 0.14
+-1 2.0
+# 2024-10-07 21:42:04 UTC: /AutoIG/scripts/target-runner 21 1 2073674354 dummy   -Ag 3 -Tg 12 -Xg 3 -Zg 3 -ground_coverage 65 -avg_height_ratio 12
+# 2024-10-07 21:42:04 UTC: DONE (21) Elapsed wall-clock seconds: 0.14
+-1 2.07
+# 2024-10-07 21:42:04 UTC: /AutoIG/scripts/target-runner 22 1 2073674354 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 88 -avg_height_ratio 11
+# 2024-10-07 21:42:04 UTC: DONE (22) Elapsed wall-clock seconds: 0.14
+-1 2.19
+# 2024-10-07 21:42:04 UTC: /AutoIG/scripts/target-runner 24 1 2073674354 dummy   -Ag 1 -Tg 11 -Xg 4 -Zg 3 -ground_coverage 85 -avg_height_ratio 48
+# 2024-10-07 21:42:04 UTC: DONE (24) Elapsed wall-clock seconds: 0.14
+-1 2.32
+|=|          9|          8|          1|   -1.000000000|         43|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:42:04 UTC: /AutoIG/scripts/target-runner 19 1 601225362 dummy   -Ag 1 -Tg 9 -Xg 3 -Zg 2 -ground_coverage 2 -avg_height_ratio 87
+# 2024-10-07 21:42:04 UTC: DONE (19) Elapsed wall-clock seconds: 0.14
+-1 2.01
+# 2024-10-07 21:42:04 UTC: /AutoIG/scripts/target-runner 21 1 601225362 dummy   -Ag 3 -Tg 12 -Xg 3 -Zg 3 -ground_coverage 65 -avg_height_ratio 12
+# 2024-10-07 21:42:05 UTC: DONE (21) Elapsed wall-clock seconds: 0.14
+-1 2.09
+# 2024-10-07 21:42:05 UTC: /AutoIG/scripts/target-runner 22 1 601225362 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 88 -avg_height_ratio 11
+# 2024-10-07 21:42:05 UTC: DONE (22) Elapsed wall-clock seconds: 0.14
+-1 2.19
+# 2024-10-07 21:42:05 UTC: /AutoIG/scripts/target-runner 24 1 601225362 dummy   -Ag 1 -Tg 11 -Xg 4 -Zg 3 -ground_coverage 85 -avg_height_ratio 48
+# 2024-10-07 21:42:05 UTC: DONE (24) Elapsed wall-clock seconds: 0.14
+-1 2.33
+|=|          2|          8|          1|   -1.000000000|         47|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:42:05 UTC: /AutoIG/scripts/target-runner 19 1 285596038 dummy   -Ag 1 -Tg 9 -Xg 3 -Zg 2 -ground_coverage 2 -avg_height_ratio 87
+# 2024-10-07 21:42:05 UTC: DONE (19) Elapsed wall-clock seconds: 0.17
+-1 1.99
+# 2024-10-07 21:42:05 UTC: /AutoIG/scripts/target-runner 21 1 285596038 dummy   -Ag 3 -Tg 12 -Xg 3 -Zg 3 -ground_coverage 65 -avg_height_ratio 12
+# 2024-10-07 21:42:05 UTC: DONE (21) Elapsed wall-clock seconds: 0.15
+-1 2.0
+# 2024-10-07 21:42:05 UTC: /AutoIG/scripts/target-runner 22 1 285596038 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 88 -avg_height_ratio 11
+# 2024-10-07 21:42:05 UTC: DONE (22) Elapsed wall-clock seconds: 0.14
+-1 2.19
+# 2024-10-07 21:42:05 UTC: /AutoIG/scripts/target-runner 24 1 285596038 dummy   -Ag 1 -Tg 11 -Xg 4 -Zg 3 -ground_coverage 85 -avg_height_ratio 48
+# 2024-10-07 21:42:05 UTC: DONE (24) Elapsed wall-clock seconds: 0.15
+-1 2.31
+|=|         10|          8|          1|   -1.000000000|         51|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:42:05 UTC: /AutoIG/scripts/target-runner 19 1 61910261 dummy   -Ag 1 -Tg 9 -Xg 3 -Zg 2 -ground_coverage 2 -avg_height_ratio 87
+# 2024-10-07 21:42:06 UTC: DONE (19) Elapsed wall-clock seconds: 0.14
+-1 1.98
+# 2024-10-07 21:42:06 UTC: /AutoIG/scripts/target-runner 21 1 61910261 dummy   -Ag 3 -Tg 12 -Xg 3 -Zg 3 -ground_coverage 65 -avg_height_ratio 12
+# 2024-10-07 21:42:06 UTC: DONE (21) Elapsed wall-clock seconds: 0.14
+-1 1.99
+# 2024-10-07 21:42:06 UTC: /AutoIG/scripts/target-runner 22 1 61910261 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 88 -avg_height_ratio 11
+# 2024-10-07 21:42:06 UTC: DONE (22) Elapsed wall-clock seconds: 0.14
+-1 2.18
+# 2024-10-07 21:42:06 UTC: /AutoIG/scripts/target-runner 24 1 61910261 dummy   -Ag 1 -Tg 11 -Xg 4 -Zg 3 -ground_coverage 85 -avg_height_ratio 48
+# 2024-10-07 21:42:06 UTC: DONE (24) Elapsed wall-clock seconds: 0.14
+-1 2.3
+|=|          8|          8|          1|   -1.000000000|         55|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:42:06 UTC: /AutoIG/scripts/target-runner 19 1 735527639 dummy   -Ag 1 -Tg 9 -Xg 3 -Zg 2 -ground_coverage 2 -avg_height_ratio 87
+# 2024-10-07 21:42:06 UTC: DONE (19) Elapsed wall-clock seconds: 0.14
+-1 1.99
+# 2024-10-07 21:42:06 UTC: /AutoIG/scripts/target-runner 21 1 735527639 dummy   -Ag 3 -Tg 12 -Xg 3 -Zg 3 -ground_coverage 65 -avg_height_ratio 12
+# 2024-10-07 21:42:06 UTC: DONE (21) Elapsed wall-clock seconds: 0.14
+-1 1.98
+# 2024-10-07 21:42:06 UTC: /AutoIG/scripts/target-runner 22 1 735527639 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 88 -avg_height_ratio 11
+# 2024-10-07 21:42:06 UTC: DONE (22) Elapsed wall-clock seconds: 0.14
+-1 2.19
+# 2024-10-07 21:42:06 UTC: /AutoIG/scripts/target-runner 24 1 735527639 dummy   -Ag 1 -Tg 11 -Xg 4 -Zg 3 -ground_coverage 85 -avg_height_ratio 48
+# 2024-10-07 21:42:07 UTC: DONE (24) Elapsed wall-clock seconds: 0.14
+-1 2.59
+|=|          7|          8|          1|   -1.000000000|         59|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:42:07 UTC: /AutoIG/scripts/target-runner 19 1 1222707704 dummy   -Ag 1 -Tg 9 -Xg 3 -Zg 2 -ground_coverage 2 -avg_height_ratio 87
+# 2024-10-07 21:42:07 UTC: DONE (19) Elapsed wall-clock seconds: 0.14
+-1 2.13
+# 2024-10-07 21:42:07 UTC: /AutoIG/scripts/target-runner 21 1 1222707704 dummy   -Ag 3 -Tg 12 -Xg 3 -Zg 3 -ground_coverage 65 -avg_height_ratio 12
+# 2024-10-07 21:42:07 UTC: DONE (21) Elapsed wall-clock seconds: 0.14
+-1 2.13
+# 2024-10-07 21:42:07 UTC: /AutoIG/scripts/target-runner 22 1 1222707704 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 88 -avg_height_ratio 11
+# 2024-10-07 21:42:07 UTC: DONE (22) Elapsed wall-clock seconds: 0.14
+-1 2.33
+# 2024-10-07 21:42:07 UTC: /AutoIG/scripts/target-runner 24 1 1222707704 dummy   -Ag 1 -Tg 11 -Xg 4 -Zg 3 -ground_coverage 85 -avg_height_ratio 48
+# 2024-10-07 21:42:07 UTC: DONE (24) Elapsed wall-clock seconds: 0.14
+-1 2.43
+|=|          5|          8|          1|   -1.000000000|         63|00:00:00|+1.00|1.00|0.0000|
+# 2024-10-07 21:42:07 UTC: /AutoIG/scripts/target-runner 1 1 1409462646 dummy   -Ag 2 -Tg 17 -Xg 3 -Zg 3 -ground_coverage 63 -avg_height_ratio 14
+# 2024-10-07 21:42:07 UTC: DONE (1) Elapsed wall-clock seconds: 0.14
+-1 2.21
+# 2024-10-07 21:42:07 UTC: /AutoIG/scripts/target-runner 10 1 1409462646 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 67 -avg_height_ratio 13
+# 2024-10-07 21:42:07 UTC: DONE (10) Elapsed wall-clock seconds: 0.14
+-1 2.31
+# 2024-10-07 21:42:07 UTC: /AutoIG/scripts/target-runner 12 1 1409462646 dummy   -Ag 1 -Tg 10 -Xg 3 -Zg 2 -ground_coverage 21 -avg_height_ratio 65
+# 2024-10-07 21:42:08 UTC: DONE (12) Elapsed wall-clock seconds: 0.14
+-1 1.98
+# 2024-10-07 21:42:08 UTC: /AutoIG/scripts/target-runner 13 1 1409462646 dummy   -Ag 1 -Tg 3 -Xg 9 -Zg 2 -ground_coverage 5 -avg_height_ratio 70
+# 2024-10-07 21:42:08 UTC: DONE (13) Elapsed wall-clock seconds: 0.14
+-1 1.81
+# 2024-10-07 21:42:08 UTC: /AutoIG/scripts/target-runner 19 1 1409462646 dummy   -Ag 1 -Tg 9 -Xg 3 -Zg 2 -ground_coverage 2 -avg_height_ratio 87
+# 2024-10-07 21:42:08 UTC: DONE (19) Elapsed wall-clock seconds: 0.14
+-1 2.02
+# 2024-10-07 21:42:08 UTC: /AutoIG/scripts/target-runner 21 1 1409462646 dummy   -Ag 3 -Tg 12 -Xg 3 -Zg 3 -ground_coverage 65 -avg_height_ratio 12
+# 2024-10-07 21:42:08 UTC: DONE (21) Elapsed wall-clock seconds: 0.14
+-1 2.15
+# 2024-10-07 21:42:08 UTC: /AutoIG/scripts/target-runner 22 1 1409462646 dummy   -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 88 -avg_height_ratio 11
+# 2024-10-07 21:42:08 UTC: DONE (22) Elapsed wall-clock seconds: 0.14
+-1 2.31
+# 2024-10-07 21:42:08 UTC: /AutoIG/scripts/target-runner 24 1 1409462646 dummy   -Ag 1 -Tg 11 -Xg 4 -Zg 3 -ground_coverage 85 -avg_height_ratio 48
+# 2024-10-07 21:42:08 UTC: DONE (24) Elapsed wall-clock seconds: 0.14
+-1 2.4
+|=|         12|          8|          1|   -1.000000000|         71|00:00:01|+1.00|1.00|0.0000|
++-+-----------+-----------+-----------+---------------+-----------+--------+-----+----+------+
+# Stopped because tests without elimination (2) >= elitistLimit (2)
+Best-so-far configuration:           1    mean value:    -1.000000000
+Description of the best-so-far configuration:
+  .ID. Ag Tg Xg Zg ground_coverage avg_height_ratio .PARENT.
+1    1  2 17  3  3              63               14       NA
+
+# 2024-10-07 21:42:08 UTC: Extracting elites
+# 2024-10-07 21:42:08 UTC: Elite configurations (first number is the configuration ID; listed from best to worst according to the sum of ranks):
+   .ID. Ag Tg Xg Zg ground_coverage avg_height_ratio .PARENT. .ALIVE. .RANK. .WEIGHT.
+1     1  2 17  3  3              63               14       NA    TRUE     54      0.4
+10   10  2 18  3  3              67               13        1    TRUE     54      0.3
+12   12  1 10  3  2              21               65        7    TRUE     54      0.2
+13   13  1  3  9  2               5               70        7    TRUE     54      0.1
+# 2024-10-07 21:42:08 UTC: End of iteration 4
+# 2024-10-07 21:42:08 UTC: Stopped because there is not enough budget left to race more than the minimum (4)
+# You may either increase the budget or set 'minNbSurvival' to a lower value
+# Iteration: 5
+# nbIterations: 5
+# experimentsUsedSoFar: 170
+# timeUsed: 0
+# remainingBudget: 10
+# currentBudget: 10
+# number of elites: 4
+# nbConfigurations: 4
+# Best configurations (first number is the configuration ID; listed from best to worst according to the sum of ranks):
+   Ag Tg Xg Zg ground_coverage avg_height_ratio
+1   2 17  3  3              63               14
+10  2 18  3  3              67               13
+12  1 10  3  2              21               65
+13  1  3  9  2               5               70
+# Best configurations as commandlines (first number is the configuration ID; same order as above):
+1   -Ag 2 -Tg 17 -Xg 3 -Zg 3 -ground_coverage 63 -avg_height_ratio 14
+10  -Ag 2 -Tg 18 -Xg 3 -Zg 3 -ground_coverage 67 -avg_height_ratio 13
+12  -Ag 1 -Tg 10 -Xg 3 -Zg 2 -ground_coverage 21 -avg_height_ratio 65
+13  -Ag 1 -Tg 3 -Xg 9 -Zg 2 -ground_coverage 5 -avg_height_ratio 70
+/AutoIG/experiments/macc-graded/detailed-output /AutoIG/experiments/macc-graded
+/AutoIG/experiments/macc-graded
+
+
+Total #runs: 170
+Total #instances generated: 93
+
+#graded instances: 57 (/124 runs)
+#too difficult instances: 36 (/36 runs)
+
+Info of graded instances is saved to /AutoIG/experiments/macc-graded/graded-instances-info.csv

@@ -1,0 +1,13 @@
+2024-10-08 09:30:17: /AutoIG/scripts/wrapper.py 8 1 510416220 dummy -tuner_nb_item_types 13 -tuner_nb_orders_delta 9 -tuner_nb_periods 10 -tuner_inventory_cost 7
+{'generalSettings': {'experimentType': 'graded', 'modelFile': '/AutoIG/data/models/lot-sizing/problem.mzn', 'generatorFile': '/AutoIG/data/models/lot-sizing/generator.essence', 'runDir': '/AutoIG/experiments/lot-sizing'}, 'generatorSettings': {'genSRTimeLimit': 300, 'genSRFlags': '-S0 -no-bound-vars', 'genSolver': 'minion', 'genSolverTimeLimit': '5', 'genSolverFlags': '-varorder domoverwdeg -valorder random'}, 'evaluationSettings': {'nEvaluations': 1, 'gradedTypes': 'all', 'solver': 'chuffed', 'solverType': 'complete', 'minTime': 0, 'solverFlags': '-f', 'totalTimeLimit': 5}}
+
+
+2024-10-08 09:30:17: Creating generator instance: ./detailed-output/gen-inst-8.param
+2024-10-08 09:30:17: minion ./detailed-output/gen-inst-8.minion -solsout ./detailed-output/gen-inst-8.solution -randomseed 510416220 -timelimit 5 -varorder domoverwdeg -valorder random
+
+
+2024-10-08 09:30:22: 
+Generator results: genInstance=gen-inst-8, genStatus=solverTimeOut, genSRTime=0, genSolverTime=5.107146978378296
+No instance file generated. Exitting...
+{'totalTime': 5.115417718887329, 'genResults': {'instance': 'gen-inst-8.param', 'status': 'solverTimeOut', 'seed': 510416220, 'SRTime': 0, 'solverTime': 5.107146978378296}, 'instanceResults': {}, 'status': 'gensolverTimeOut', 'score': 2}
+2 5.12

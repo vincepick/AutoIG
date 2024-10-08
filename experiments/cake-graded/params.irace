@@ -1,0 +1,5 @@
+flour_gen "-flour_gen " i (1000, 5000)
+banana_gen "-banana_gen " i (1, 10)
+sugar_gen "-sugar_gen " i (500, 3000)
+butter_gen "-butter_gen " i (100, 1000)
+cocoa_gen "-cocoa_gen " i (100, 1000)

@@ -1,0 +1,4 @@
+tuner_nb_item_types "-tuner_nb_item_types " i (1, 20)
+tuner_nb_orders_delta "-tuner_nb_orders_delta " i (0, 10)
+tuner_nb_periods "-tuner_nb_periods " i (1, 30)
+tuner_inventory_cost "-tuner_inventory_cost " i (1, 10)

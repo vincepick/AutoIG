@@ -1,0 +1,4 @@
+letting tuner_nb_item_types be 13
+letting tuner_nb_orders_delta be 8
+letting tuner_nb_periods be 3
+letting tuner_inventory_cost be 9

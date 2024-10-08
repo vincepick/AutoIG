@@ -1,0 +1,4 @@
+num_houses "-num_houses " i (15, 100)
+total_fuel "-total_fuel " i (2000, 20000)
+max_distance "-max_distance " i (1, 500)
+max_gold "-max_gold " i (1, 100)

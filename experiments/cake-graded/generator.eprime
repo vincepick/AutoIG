@@ -1,0 +1,217 @@
+language ESSENCE' 1.0
+
+given flour_gen: int(1000..5000)
+given banana_gen: int(1..10)
+given sugar_gen: int(500..3000)
+given butter_gen: int(100..1000)
+given cocoa_gen: int(100..1000)
+find flour: int(1..10000)
+find banana: int(1..10000)
+find sugar: int(1..10000)
+find butter: int(1..10000)
+find cocoa: int(1..10000)
+letting max_cakes be 100
+find banana_cakes: int(0..100)
+find chocolate_cakes: int(0..100)
+branching on [flour, banana, sugar, butter, cocoa, banana_cakes, chocolate_cakes]
+such that
+    flour = flour_gen,
+    banana = banana_gen,
+    sugar = sugar_gen,
+    butter = butter_gen,
+    cocoa = cocoa_gen,
+    250 * banana_cakes + 200 * chocolate_cakes <= flour,
+    2 * banana_cakes <= banana,
+    75 * banana_cakes + 150 * chocolate_cakes <= sugar,
+    100 * banana_cakes + 150 * chocolate_cakes <= butter,
+    75 * chocolate_cakes <= cocoa
+
+$ Conjure's
+$ {"finds":
+$      [{"Name": "flour"}, {"Name": "banana"}, {"Name": "sugar"}, {"Name": "butter"}, {"Name": "cocoa"},
+$       {"Name": "banana_cakes"}, {"Name": "chocolate_cakes"}],
+$  "givens":
+$      [{"Name": "flour_gen"}, {"Name": "banana_gen"}, {"Name": "sugar_gen"}, {"Name": "butter_gen"},
+$       {"Name": "cocoa_gen"}],
+$  "enumGivens": [], "enumLettings": [],
+$  "lettings": [[{"Name": "max_cakes"}, {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]], "unnameds": [],
+$  "strategyQ": {"PickFirst": []}, "strategyA": {"Compact": []},
+$  "trailCompact":
+$      [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1],
+$       [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1],
+$       [1, 1, 1]],
+$  "nameGenState": [], "nbExtraGivens": 0,
+$  "representations":
+$      [[{"Name": "banana_cakes"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                     {"Reference":
+$                          [{"Name": "max_cakes"},
+$                           {"Alias": {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}}]}]}]]}],
+$       [{"Name": "flour"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10000]}}]}]]}],
+$       [{"Name": "flour_gen"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1000]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 5000]}}]}]]}],
+$       [{"Name": "banana"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10000]}}]}]]}],
+$       [{"Name": "banana_gen"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10]}}]}]]}],
+$       [{"Name": "sugar"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10000]}}]}]]}],
+$       [{"Name": "sugar_gen"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 500]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 3000]}}]}]]}],
+$       [{"Name": "butter"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10000]}}]}]]}],
+$       [{"Name": "butter_gen"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 100]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 1000]}}]}]]}],
+$       [{"Name": "cocoa"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10000]}}]}]]}],
+$       [{"Name": "cocoa_gen"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 100]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 1000]}}]}]]}],
+$       [{"Name": "chocolate_cakes"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 100]}}]}]]}]],
+$  "representationsTree":
+$      [[{"Name": "banana"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "banana_cakes"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "banana_gen"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "butter"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "butter_gen"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "chocolate_cakes"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "cocoa"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "cocoa_gen"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "flour"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "flour_gen"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "sugar"}, [{"rootLabel": null, "subForest": []}]],
+$       [{"Name": "sugar_gen"}, [{"rootLabel": null, "subForest": []}]]],
+$  "originalDomains":
+$      [[{"Name": "flour_gen"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1000]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 5000]}}]}]]}],
+$       [{"Name": "banana_gen"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10]}}]}]]}],
+$       [{"Name": "sugar_gen"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 500]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 3000]}}]}]]}],
+$       [{"Name": "butter_gen"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 100]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 1000]}}]}]]}],
+$       [{"Name": "cocoa_gen"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 100]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 1000]}}]}]]}],
+$       [{"Name": "flour"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10000]}}]}]]}],
+$       [{"Name": "banana"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10000]}}]}]]}],
+$       [{"Name": "sugar"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10000]}}]}]]}],
+$       [{"Name": "butter"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10000]}}]}]]}],
+$       [{"Name": "cocoa"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 10000]}}]}]]}],
+$       [{"Name": "banana_cakes"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                     {"Reference": [{"Name": "max_cakes"}, null]}]}]]}],
+$       [{"Name": "chocolate_cakes"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 0]}},
+$                     {"Reference": [{"Name": "max_cakes"}, null]}]}]]}]],
+$  "trailGeneralised":
+$      [[701781352751844874, -6980909787277779333], [2895015567586653956, -1807957052963680135],
+$       [8368145039466005873, 4671244437666207788], [-6698508437034071189, -3208421790062112734],
+$       [-8505630610120368153, -8554011801763318450], [-6574309595521570385, 2878152980877801662],
+$       [-8967381430072706201, -8273564060114083018], [5844387368090023678, 2530223793091497828],
+$       [-1519357665167381619, -6322965593902983732], [1409493746422355476, 692522641649755388],
+$       [8349402793652971159, -8498627605542321794], [791494414314141806, -799304426109019502],
+$       [-3617572697832742352, -4383346256654748760], [1684609443179036841, -3224511648775811136],
+$       [5354434183148283238, -5050612497960090478], [-8132496189990325064, 2378415709504682310],
+$       [2984091722368719034, -7339333285092914100], [3734448097573820815, 97913612206481948],
+$       [-3279428220417160228, -5180635568539784750], [-61068348847199054, -5889277098879064551],
+$       [-61068348847199054, -5889277098879064551]],
+$  "trailVerbose": [], "trailRewrites": []}
