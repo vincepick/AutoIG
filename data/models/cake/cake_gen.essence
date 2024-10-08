@@ -1,0 +1,34 @@
+language Essence 1.3
+
+$ A generator model for the Cake Baking problem
+
+$ Define the capacities for the ingredients
+given flour_gen: int(1000..5000)     $ Capacity for flour in grams
+given banana_gen: int(1..10)        $ Capacity for banana
+given sugar_gen: int(500..3000)      $ Capacity for sugar in grams
+given butter_gen: int(100..1000)     $ Capacity for butter in grams
+given cocoa_gen: int(100..1000)      $ Capacity for cocoa in grams
+
+find flour, banana, sugar, butter, cocoa: int(1..10000)
+such that
+    flour = flour_gen,
+    banana = banana_gen,
+    sugar = sugar_gen,
+    butter = butter_gen,
+    cocoa = cocoa_gen
+
+$ Number of cakes to bake
+letting max_cakes be 100
+find banana_cakes, chocolate_cakes: int(0..max_cakes)
+
+$ Constraints on the number of cakes that can be baked based on the ingredient capacities
+such that
+    250 * banana_cakes + 200 * chocolate_cakes <= flour,   $ flour constraint
+    2 * banana_cakes <= banana,                           $ banana constraint
+    75 * banana_cakes + 150 * chocolate_cakes <= sugar,    $ sugar constraint
+    100 * banana_cakes + 150 * chocolate_cakes <= butter,  $ butter constraint
+    75 * chocolate_cakes <= cocoa                          $ cocoa constraint
+
+$ Objective: Maximize profit
+$ maximize 400 * banana_cakes + 450 * chocolate_cakes
+
