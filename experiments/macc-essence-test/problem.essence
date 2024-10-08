@@ -1,0 +1,76 @@
+language Essence 1.3
+
+letting A be domain int                         % Number of agents
+letting T be domain int                         % Time horizon
+letting X be domain int                         % Width
+letting Y be domain int                         % Depth
+letting Z be domain int                         % Height
+
+letting GRID be domain int(0..X*Y-1)
+letting XX be domain int(0..X-1)
+letting YY be domain int(0..Y-1)
+letting ZZ be domain int(0..Z-1)
+letting TT be domain int(0..T-1)
+letting TTT be domain int(0..T-2)
+letting OFFGRID be domain int(-2..-1)
+
+letting ACTION be new type enum { UNUSED, MOVE, BLOCK }
+letting building be matrix indexed by [XX,YY] of ZZ  % Structure to construct
+
+letting BORDER be GRID such that 
+  (forall x : XX . id(x,0) \/ id(x,Y-1)) \/ (forall y : YY . id(0,y) \/ id(X-1,y))
+letting INTERIOR be GRID diff BORDER
+letting WORLD be GRID union OFFGRID
+
+letting neighbours be function (GRID) -> set(GRID) such that 
+    (forall x : XX, y : YY . 
+    (if x > 0 then {id(x-1, y)} else {}) union 
+    (if x < X-1 then {id(x+1, y)} else {}) union 
+    (if y > 0 then {id(x, y-1)} else {}) union 
+    (if y < Y-1 then {id(x, y+1)} else {}) )
+
+letting world_neighbours_and_self be function (GRID) -> set(WORLD) such that 
+    (forall i : GRID . neighbours(i) union off_grid_neighbour(i))
+
+letting x_of_pos be function (WORLD) -> int such that 
+    (forall i : OFFGRID . i) ++ (forall x : XX, y : YY . x)
+letting y_of_pos be function (WORLD) -> int such that 
+    (forall i : OFFGRID . i) ++ (forall x : XX, y : YY . y)
+
+find pos_height : matrix indexed by [TT, WORLD] of int(ZZ)
+find agent_action : matrix indexed by [TT, WORLD] of ACTION
+find agent_next_position : matrix indexed by [TT, WORLD] of int(WORLD)
+find agent_block_position : matrix indexed by [TT, GRID] of int(GRID)
+find agent_carrying : matrix indexed by [TT, WORLD] of bool
+find agent_pickup : matrix indexed by [TTT, GRID] of bool
+find agent_delivery : matrix indexed by [TTT, GRID] of bool
+
+such that
+
+    % Environment Constraints
+    forall t : TT, i : OFFGRID .
+        pos_height[t,i] = 0,
+
+    forall t : TT, i : BORDER .
+        pos_height[t,i] = 0,
+
+    forall t : min(TT)..min(TT)+1, i : GRID .
+        pos_height[t,i] = 0,
+
+    forall t : max(TT)-1..max(TT), i : GRID .
+        pos_height[t,i] = building[y_of_pos[i],x_of_pos[i]],
+
+    % Agent Constraints
+    forall t : TT, i : GRID .
+        agent_next_position[t,i] in world_neighbours_and_self(i),
+
+    forall t : TT, i : GRID .
+        agent_action[t,i] = BLOCK -> agent_next_position[t,i] = i,
+
+    forall t : TT, i : GRID .
+        agent_block_position[t,i] in neighbours(i),
+
+    % Objective Function
+    objective is sum([ bool2int(agent_action[t,i] != UNUSED) | t : TT, i : GRID ]),
+
+minimising objective
