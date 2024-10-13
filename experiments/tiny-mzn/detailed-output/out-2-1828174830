@@ -1,0 +1,21 @@
+2024-10-13 18:02:29: /AutoIG/scripts/wrapper.py 2 1 1828174830 dummy -B 786
+{'generalSettings': {'experimentType': 'graded', 'modelFile': '/AutoIG/data/models/tiny/tiny.mzn', 'generatorFile': '/AutoIG/data/models/tiny/tiny_gen.essence', 'runDir': '/AutoIG/experiments/tiny-mzn'}, 'generatorSettings': {'genSRTimeLimit': 300, 'genSRFlags': '-S0 -no-bound-vars', 'genSolver': 'minion', 'genSolverTimeLimit': '5', 'genSolverFlags': '-varorder domoverwdeg -valorder random'}, 'evaluationSettings': {'nEvaluations': 1, 'gradedTypes': 'all', 'solver': 'chuffed', 'solverType': 'complete', 'minTime': 0, 'solverFlags': '-f', 'totalTimeLimit': 5}}
+
+
+2024-10-13 18:02:29: Creating generator instance: ./detailed-output/gen-inst-2.param
+2024-10-13 18:02:29: minion ./detailed-output/gen-inst-2.minion -solsout ./detailed-output/gen-inst-2.solution -randomseed 1828174830 -timelimit 5 -varorder domoverwdeg -valorder random
+2024-10-13 18:02:30: savilerow ./detailed-output/generator.eprime -mode ReadSolution -out-aux ./detailed-output/gen-inst-2.aux -out-solution ./detailed-output/gen-inst-2.solution.eprime-param -minion-sol-file ./detailed-output/gen-inst-2.solution
+2024-10-13 18:02:30: conjure translate-solution --eprime=./detailed-output/generator.eprime --essence-param=./detailed-output/gen-inst-2.param --eprime-solution=./detailed-output/gen-inst-2.solution.eprime-param --essence-solution ./detailed-output/gen-inst-2.solution.param
+
+
+2024-10-13 18:02:31: 
+Generator results: genInstance=gen-inst-2, genStatus=sat, genSRTime=0, genSolverTime=0.1098625659942627
+conjure autoig --remove-aux ./detailed-output/inst-2-1828174830.param ./detailed-output/inst-2-1828174830.auxRemoved.param
+conjure pretty ./detailed-output/inst-2-1828174830.auxRemoved.param --output-format=minizinc
+./detailed-output/inst-2-1828174830.dzn generated
+
+
+runsolver -w ./detailed-output/inst-2-1828174830.dzn.chuffed.runsolver -d 2 --wall-clock-limit 5 --vsize-limit 8192 minizinc --time-limit 5000 --solver chuffed  -f problem.mzn ./detailed-output/inst-2-1828174830.dzn --output-mode dzn -s
+C 0.37773942947387695 {'objs': [], 'flattenStatus': 'ok', 'flattenTime': 0.169677, 'instanceType': 'unsat', 'answerStatus': 'unknown'}
+{'totalTime': 1.6479084491729736, 'genResults': {'instance': 'gen-inst-2.param', 'status': 'sat', 'seed': 1828174830, 'SRTime': 0, 'solverTime': 0.1098625659942627}, 'instanceResults': {'instance': './detailed-output/inst-2-1828174830.dzn', 'status': 'ok', 'score': -1, 'results': {'main': {'runs': [{'seed': None, 'status': 'C', 'time': 0.37773942947387695, 'extra': {'objs': [], 'flattenStatus': 'ok', 'flattenTime': 0.169677, 'instanceType': 'unsat', 'answerStatus': 'unknown'}}]}, 'oracle': {'runs': []}}}, 'status': 'ok', 'score': -1}
+-1 1.65

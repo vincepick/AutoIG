@@ -1,0 +1,43 @@
+language ESSENCE' 1.0
+
+given B: int(1..1000)
+find b: int(1..1000)
+branching on [b]
+such that b = B
+
+$ Conjure's
+$ {"finds": [{"Name": "b"}], "givens": [{"Name": "B"}], "enumGivens": [], "enumLettings": [], "lettings": [],
+$  "unnameds": [], "strategyQ": {"PickFirst": []}, "strategyA": {"Compact": []},
+$  "trailCompact": [[1, 1, 1], [1, 1, 1], [1, 1, 1]], "nameGenState": [], "nbExtraGivens": 0,
+$  "representations":
+$      [[{"Name": "b"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 1000]}}]}]]}],
+$       [{"Name": "B"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 1000]}}]}]]}]],
+$  "representationsTree":
+$      [[{"Name": "B"}, [{"rootLabel": null, "subForest": []}]], [{"Name": "b"}, [{"rootLabel": null, "subForest": []}]]],
+$  "originalDomains":
+$      [[{"Name": "B"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 1000]}}]}]]}],
+$       [{"Name": "b"},
+$        {"DomainInt":
+$             [{"TagInt": []},
+$              [{"RangeBounded":
+$                    [{"Constant": {"ConstantInt": [{"TagInt": []}, 1]}},
+$                     {"Constant": {"ConstantInt": [{"TagInt": []}, 1000]}}]}]]}]],
+$  "trailGeneralised":
+$      [[-7515573659462268985, -6003100025258719226], [-1671612063157778413, 1196929363741459348],
+$       [6969947069653339274, 8574691753685338048]],
+$  "trailVerbose": [], "trailRewrites": []}

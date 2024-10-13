@@ -1,0 +1,21 @@
+2024-10-13 18:07:34: /AutoIG/scripts/wrapper.py 20 1 1828174830 dummy -B 93
+{'generalSettings': {'experimentType': 'graded', 'modelFile': '/AutoIG/data/models/tiny/tiny.mzn', 'generatorFile': '/AutoIG/data/models/tiny/tiny_gen.essence', 'runDir': '/AutoIG/experiments/tiny-mzn'}, 'generatorSettings': {'genSRTimeLimit': 300, 'genSRFlags': '-S0 -no-bound-vars', 'genSolver': 'minion', 'genSolverTimeLimit': '5', 'genSolverFlags': '-varorder domoverwdeg -valorder random'}, 'evaluationSettings': {'nEvaluations': 1, 'gradedTypes': 'all', 'solver': 'chuffed', 'solverType': 'complete', 'minTime': 0, 'solverFlags': '-f', 'totalTimeLimit': 5}}
+
+
+2024-10-13 18:07:34: Creating generator instance: ./detailed-output/gen-inst-20.param
+2024-10-13 18:07:34: minion ./detailed-output/gen-inst-20.minion -solsout ./detailed-output/gen-inst-20.solution -randomseed 1828174830 -timelimit 5 -varorder domoverwdeg -valorder random
+2024-10-13 18:07:34: savilerow ./detailed-output/generator.eprime -mode ReadSolution -out-aux ./detailed-output/gen-inst-20.aux -out-solution ./detailed-output/gen-inst-20.solution.eprime-param -minion-sol-file ./detailed-output/gen-inst-20.solution
+2024-10-13 18:07:34: conjure translate-solution --eprime=./detailed-output/generator.eprime --essence-param=./detailed-output/gen-inst-20.param --eprime-solution=./detailed-output/gen-inst-20.solution.eprime-param --essence-solution ./detailed-output/gen-inst-20.solution.param
+
+
+2024-10-13 18:07:35: 
+Generator results: genInstance=gen-inst-20, genStatus=sat, genSRTime=0, genSolverTime=0.11781430244445801
+conjure autoig --remove-aux ./detailed-output/inst-20-1828174830.param ./detailed-output/inst-20-1828174830.auxRemoved.param
+conjure pretty ./detailed-output/inst-20-1828174830.auxRemoved.param --output-format=minizinc
+./detailed-output/inst-20-1828174830.dzn generated
+
+
+runsolver -w ./detailed-output/inst-20-1828174830.dzn.chuffed.runsolver -d 2 --wall-clock-limit 5 --vsize-limit 8192 minizinc --time-limit 5000 --solver chuffed  -f problem.mzn ./detailed-output/inst-20-1828174830.dzn --output-mode dzn -s
+C 0.379122257232666 {'objs': [], 'flattenStatus': 'ok', 'flattenTime': 0.168367, 'instanceType': 'unsat', 'answerStatus': 'unknown'}
+{'totalTime': 1.6677682399749756, 'genResults': {'instance': 'gen-inst-20.param', 'status': 'sat', 'seed': 1828174830, 'SRTime': 0, 'solverTime': 0.11781430244445801}, 'instanceResults': {'instance': './detailed-output/inst-20-1828174830.dzn', 'status': 'ok', 'score': -1, 'results': {'main': {'runs': [{'seed': None, 'status': 'C', 'time': 0.379122257232666, 'extra': {'objs': [], 'flattenStatus': 'ok', 'flattenTime': 0.168367, 'instanceType': 'unsat', 'answerStatus': 'unknown'}}]}, 'oracle': {'runs': []}}}, 'status': 'ok', 'score': -1}
+-1 1.67

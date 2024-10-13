@@ -1,0 +1,21 @@
+2024-10-13 18:07:12: /AutoIG/scripts/wrapper.py 22 1 1430553564 dummy -B 186
+{'generalSettings': {'experimentType': 'graded', 'modelFile': '/AutoIG/data/models/tiny/tiny.mzn', 'generatorFile': '/AutoIG/data/models/tiny/tiny_gen.essence', 'runDir': '/AutoIG/experiments/tiny-mzn'}, 'generatorSettings': {'genSRTimeLimit': 300, 'genSRFlags': '-S0 -no-bound-vars', 'genSolver': 'minion', 'genSolverTimeLimit': '5', 'genSolverFlags': '-varorder domoverwdeg -valorder random'}, 'evaluationSettings': {'nEvaluations': 1, 'gradedTypes': 'all', 'solver': 'chuffed', 'solverType': 'complete', 'minTime': 0, 'solverFlags': '-f', 'totalTimeLimit': 5}}
+
+
+2024-10-13 18:07:12: Creating generator instance: ./detailed-output/gen-inst-22.param
+2024-10-13 18:07:12: minion ./detailed-output/gen-inst-22.minion -solsout ./detailed-output/gen-inst-22.solution -randomseed 1430553564 -timelimit 5 -varorder domoverwdeg -valorder random
+2024-10-13 18:07:13: savilerow ./detailed-output/generator.eprime -mode ReadSolution -out-aux ./detailed-output/gen-inst-22.aux -out-solution ./detailed-output/gen-inst-22.solution.eprime-param -minion-sol-file ./detailed-output/gen-inst-22.solution
+2024-10-13 18:07:13: conjure translate-solution --eprime=./detailed-output/generator.eprime --essence-param=./detailed-output/gen-inst-22.param --eprime-solution=./detailed-output/gen-inst-22.solution.eprime-param --essence-solution ./detailed-output/gen-inst-22.solution.param
+
+
+2024-10-13 18:07:14: 
+Generator results: genInstance=gen-inst-22, genStatus=sat, genSRTime=0, genSolverTime=0.11997604370117188
+conjure autoig --remove-aux ./detailed-output/inst-22-1430553564.param ./detailed-output/inst-22-1430553564.auxRemoved.param
+conjure pretty ./detailed-output/inst-22-1430553564.auxRemoved.param --output-format=minizinc
+./detailed-output/inst-22-1430553564.dzn generated
+
+
+runsolver -w ./detailed-output/inst-22-1430553564.dzn.chuffed.runsolver -d 2 --wall-clock-limit 5 --vsize-limit 8192 minizinc --time-limit 5000 --solver chuffed  -f problem.mzn ./detailed-output/inst-22-1430553564.dzn --output-mode dzn -s
+C 0.37328124046325684 {'objs': [], 'flattenStatus': 'ok', 'flattenTime': 0.169216, 'instanceType': 'unsat', 'answerStatus': 'unknown'}
+{'totalTime': 1.6514415740966797, 'genResults': {'instance': 'gen-inst-22.param', 'status': 'sat', 'seed': 1430553564, 'SRTime': 0, 'solverTime': 0.11997604370117188}, 'instanceResults': {'instance': './detailed-output/inst-22-1430553564.dzn', 'status': 'ok', 'score': -1, 'results': {'main': {'runs': [{'seed': None, 'status': 'C', 'time': 0.37328124046325684, 'extra': {'objs': [], 'flattenStatus': 'ok', 'flattenTime': 0.169216, 'instanceType': 'unsat', 'answerStatus': 'unknown'}}]}, 'oracle': {'runs': []}}}, 'status': 'ok', 'score': -1}
+-1 1.65
