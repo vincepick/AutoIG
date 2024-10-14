@@ -1,0 +1,9 @@
+2024-10-13 22:11:12: Setting up the tuning: BEGIN
+WARNING: directory /AutoIG/experiments/tiny-essence already exists
+2024-10-13 22:11:12: conjure autoig --generator-to-irace /AutoIG/experiments/tiny-essence/generator.essence /AutoIG/experiments/tiny-essence/params.irace
+2024-10-13 22:11:12: conjure modelling -ac /AutoIG/experiments/tiny-essence/problem.essence -o /AutoIG/experiments/tiny-essence
+2024-10-13 22:11:13: conjure modelling -ac /AutoIG/experiments/tiny-essence/generator.essence -o /AutoIG/experiments/tiny-essence
+2024-10-13 22:11:13: All settings are saved in /AutoIG/experiments/tiny-essence/config.json
+2024-10-13 22:11:13: Setting up the tuning: COMPLETED
+
+

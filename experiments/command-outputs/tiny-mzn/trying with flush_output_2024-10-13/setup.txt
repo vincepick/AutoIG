@@ -1,0 +1,8 @@
+2024-10-13 22:27:09: Setting up the tuning: BEGIN
+WARNING: directory /AutoIG/experiments/tiny-mzn already exists
+2024-10-13 22:27:09: conjure autoig --generator-to-irace /AutoIG/experiments/tiny-mzn/generator.essence /AutoIG/experiments/tiny-mzn/params.irace
+2024-10-13 22:27:09: conjure modelling -ac /AutoIG/experiments/tiny-mzn/generator.essence -o /AutoIG/experiments/tiny-mzn
+2024-10-13 22:27:09: All settings are saved in /AutoIG/experiments/tiny-mzn/config.json
+2024-10-13 22:27:09: Setting up the tuning: COMPLETED
+
+
