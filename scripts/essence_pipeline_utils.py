@@ -2,6 +2,8 @@ import os
 import sys
 import time
 import glob
+# import logging
+# logging.basicConfig(filename='tempLogFile.log', level=logging.INFO)
 
 scriptDir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(scriptDir)
@@ -374,6 +376,8 @@ def make_conjure_solve_command(
 
 
 def call_conjure_solve(essenceModelFile, eprimeModelFile, instFile, setting, seed):
+    print("Settings dictionary:", setting, flush=True)
+
     if "name" in setting:
         solver = setting["name"]
     elif "solver" in setting:
@@ -386,10 +390,16 @@ def call_conjure_solve(essenceModelFile, eprimeModelFile, instFile, setting, see
         eprimeModelFile,
         instFile,
         solver,
-        setting["SRTimeLimit"],
-        setting["SRFlags"],
-        setting["solverTimeLimit"],
-        setting["solverFlags"],
+        # setting["SRTimeLimit"],
+        # setting["SRFlags"],
+        # setting["solverTimeLimit"],
+        # setting["solverFlags"],
+
+        # These are the default values, vap2
+        3,
+        "",
+        0,
+        "",
         seed,
     )
     lsTempFiles.extend(tempFiles)
