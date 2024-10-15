@@ -1,33 +1,41 @@
-2024-10-13 17:27:39: /AutoIG/scripts/wrapper.py 1 1 719061008 dummy -B 137
+2024-10-15 14:57:00: /AutoIG/scripts/wrapper2.py 1 1 719061008 dummy -B 137
 {'generalSettings': {'experimentType': 'graded', 'modelFile': '/AutoIG/data/models/tinyEssence/tinyProb.essence', 'generatorFile': '/AutoIG/data/models/tinyEssence/tiny_gen.essence', 'runDir': '/AutoIG/experiments/tiny-essence'}, 'generatorSettings': {'genSRTimeLimit': 300, 'genSRFlags': '-S0 -no-bound-vars', 'genSolver': 'minion', 'genSolverTimeLimit': '5', 'genSolverFlags': '-varorder domoverwdeg -valorder random'}, 'evaluationSettings': {'nEvaluations': 1, 'gradedTypes': 'all', 'solver': 'chuffed', 'solverType': 'complete', 'minTime': 0, 'solverFlags': '-f', 'totalTimeLimit': 5}}
 
 
-2024-10-13 17:27:39: Creating generator instance: ./detailed-output/gen-inst-1.param
-2024-10-13 17:27:39: conjure translate-parameter --eprime=./detailed-output/generator.eprime --essence-param=./detailed-output/gen-inst-1.param --eprime-param=./detailed-output/gen-inst-1.eprime-param
-2024-10-13 17:27:39: savilerow ./detailed-output/generator.eprime ./detailed-output/gen-inst-1.eprime-param -out-aux ./detailed-output/gen-inst-1.aux -out-minion ./detailed-output/gen-inst-1.minion -save-symbols -timelimit 300 -S0 -no-bound-vars
-2024-10-13 17:27:40: minion ./detailed-output/gen-inst-1.minion -solsout ./detailed-output/gen-inst-1.solution -randomseed 719061008 -timelimit 5 -varorder domoverwdeg -valorder random
-2024-10-13 17:27:41: savilerow ./detailed-output/generator.eprime -mode ReadSolution -out-aux ./detailed-output/gen-inst-1.aux -out-solution ./detailed-output/gen-inst-1.solution.eprime-param -minion-sol-file ./detailed-output/gen-inst-1.solution
-2024-10-13 17:27:41: conjure translate-solution --eprime=./detailed-output/generator.eprime --essence-param=./detailed-output/gen-inst-1.param --eprime-solution=./detailed-output/gen-inst-1.solution.eprime-param --essence-solution ./detailed-output/gen-inst-1.solution.param
+2024-10-15 14:57:00: Creating generator instance: ./detailed-output/gen-inst-1.param
+2024-10-15 14:57:00: minion ./detailed-output/gen-inst-1.minion -solsout ./detailed-output/gen-inst-1.solution -randomseed 719061008 -timelimit 5 -varorder domoverwdeg -valorder random
+2024-10-15 14:57:01: savilerow ./detailed-output/generator.eprime -mode ReadSolution -out-aux ./detailed-output/gen-inst-1.aux -out-solution ./detailed-output/gen-inst-1.solution.eprime-param -minion-sol-file ./detailed-output/gen-inst-1.solution
+2024-10-15 14:57:01: conjure translate-solution --eprime=./detailed-output/generator.eprime --essence-param=./detailed-output/gen-inst-1.param --eprime-solution=./detailed-output/gen-inst-1.solution.eprime-param --essence-solution ./detailed-output/gen-inst-1.solution.param
 
 
-2024-10-13 17:27:41: 
-Generator results: genInstance=gen-inst-1, genStatus=sat, genSRTime=0.8263461589813232, genSolverTime=0.08353829383850098
+2024-10-15 14:57:01: 
+Generator results: genInstance=gen-inst-1, genStatus=sat, genSRTime=0, genSolverTime=0.12174773216247559
 
 
-2024-10-13 17:27:41: Solving ./detailed-output/inst-1-719061008.param...
+2024-10-15 14:57:01: Solving ./detailed-output/inst-1-719061008.param...
 
 
 ----------- With random seed 0th (719061008)
+Settings dictionary: {'nEvaluations': 1, 'gradedTypes': 'all', 'solver': 'chuffed', 'solverType': 'complete', 'minTime': 0, 'solverFlags': '-f', 'totalTimeLimit': 5}
+
+Calling conjure
+2024-10-15 14:57:01: conjure solve ./problem.essence ./detailed-output/inst-1-719061008.param -o ./detailed-output --use-existing-models=problem.eprime --savilerow-options "-timelimit 3 " --solver-options " --rnd-seed 719061008 " --solver=chuffed
+2024-10-15 14:57:02: Error: Missing values for parameters: a
+Using existing models.
+Savile Row: ./detailed-output/problem.eprime ./detailed-output/inst-1-719061008.param
+
 Traceback (most recent call last):
-  File "/AutoIG/scripts/wrapper.py", line 1096, in <module>
+  File "/AutoIG/scripts/wrapper2.py", line 1100, in <module>
     main()
-  File "/AutoIG/scripts/wrapper.py", line 1032, in main
+  File "/AutoIG/scripts/wrapper2.py", line 1034, in main
     score, instanceResults = globals()[evaluationFunctionName](
                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/AutoIG/scripts/wrapper.py", line 87, in evaluate_essence_instance_graded
+  File "/AutoIG/scripts/wrapper2.py", line 87, in evaluate_essence_instance_graded
     runStatus, SRTime, solverTime = call_conjure_solve(
                                     ^^^^^^^^^^^^^^^^^^^
-  File "/AutoIG/scripts/essence_pipeline_utils.py", line 389, in call_conjure_solve
-    setting["SRTimeLimit"],
-    ~~~~~~~^^^^^^^^^^^^^^^
-KeyError: 'SRTimeLimit'
+  File "/AutoIG/scripts/essence_pipeline_utils.py", line 435, in call_conjure_solve
+    raise Exception(cmdOutput)
+Exception: Error: Missing values for parameters: a
+Using existing models.
+Savile Row: ./detailed-output/problem.eprime ./detailed-output/inst-1-719061008.param
+
