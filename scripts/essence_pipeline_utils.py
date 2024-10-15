@@ -2,8 +2,6 @@ import os
 import sys
 import time
 import glob
-# import logging
-# logging.basicConfig(filename='tempLogFile.log', level=logging.INFO)
 
 scriptDir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(scriptDir)
@@ -104,11 +102,11 @@ def savilerow_translate(
         + flags
     )
     log(cmd)
-
+    
     start = time.time()
     cmdOutput, returnCode = run_cmd(cmd)
     SRTime = time.time() - start
-
+    
     status = "SRok"
     # if returnCode !=0, check if it is because SR is out of memory or timeout
     if (
@@ -376,8 +374,6 @@ def make_conjure_solve_command(
 
 
 def call_conjure_solve(essenceModelFile, eprimeModelFile, instFile, setting, seed):
-    print("Settings dictionary:", setting, flush=True)
-
     if "name" in setting:
         solver = setting["name"]
     elif "solver" in setting:
@@ -394,8 +390,6 @@ def call_conjure_solve(essenceModelFile, eprimeModelFile, instFile, setting, see
         # setting["SRFlags"],
         # setting["solverTimeLimit"],
         # setting["solverFlags"],
-
-        # These are the default values, vap2
         3,
         "",
         0,
@@ -491,7 +485,8 @@ def call_conjure_solve(essenceModelFile, eprimeModelFile, instFile, setting, see
 
         # parse SR info file
         infoStatus, SRTime, solverTime = parse_SR_info_file(
-            infoFile, timelimit=setting["solverTimeLimit"]
+            infoFile, timelimit=3
+            #  timelimit=setting["solverTimeLimit"]
         )
         if status != "solverCrash":
             status = infoStatus
