@@ -3,7 +3,7 @@
  "problemModel": "/AutoIG/data/models/car-sequencing/problem.essence",
  "generatorModel": "/AutoIG/data/models/car-sequencing/generator.essence",
  "seed": 42,
- "maxEvaluations": 180,
+ "maxEvaluations": 300,
  "nCores": 1,
  "genSRTimeLimit": 300,
  "genSRFlags": "-S0 -no-bound-vars",

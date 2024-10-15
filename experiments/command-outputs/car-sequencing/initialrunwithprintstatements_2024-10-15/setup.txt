@@ -1,0 +1,9 @@
+2024-10-15 18:54:21: Setting up the tuning: BEGIN
+WARNING: directory /AutoIG/experiments/car-sequencing already exists
+2024-10-15 18:54:21: conjure autoig --generator-to-irace /AutoIG/experiments/car-sequencing/generator.essence /AutoIG/experiments/car-sequencing/params.irace
+2024-10-15 18:54:22: conjure modelling -ac /AutoIG/experiments/car-sequencing/problem.essence -o /AutoIG/experiments/car-sequencing
+2024-10-15 18:54:23: conjure modelling -ac /AutoIG/experiments/car-sequencing/generator.essence -o /AutoIG/experiments/car-sequencing
+2024-10-15 18:54:33: All settings are saved in /AutoIG/experiments/car-sequencing/config.json
+2024-10-15 18:54:33: Setting up the tuning: COMPLETED
+
+
