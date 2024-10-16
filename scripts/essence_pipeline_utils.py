@@ -374,6 +374,7 @@ def make_conjure_solve_command(
 
 
 def call_conjure_solve(essenceModelFile, eprimeModelFile, instFile, setting, seed):
+    print("Settings dictionary is", setting)
     if "name" in setting:
         solver = setting["name"]
     elif "solver" in setting:
