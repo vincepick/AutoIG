@@ -393,6 +393,9 @@ def call_conjure_solve(essenceModelFile, eprimeModelFile, instFile, setting, see
         setting["solverFlags"],
         seed,
     )
+
+    
+    print("conjure command is", conjureCmd)
     lsTempFiles.extend(tempFiles)
 
     # call conjure
