@@ -38,7 +38,7 @@ mkdir -p experiments/tinyEssence/
 
 cd experiments/tinyEssence/
 
-python $AUTOIG/scripts/setup.py --generatorModel $AUTOIG/data/models/tiny/tiny_gen.essence --problemModel $AUTOIG/data/models/tiny/tinyProb.essence --instanceSetting graded --minSolverTime 0 --maxSolverTime 5 --solver chuffed --solverFlags="-f" --maxEvaluations 180 --genSolverTimeLimit 5
+python $AUTOIG/scripts/setup.py --generatorModel $AUTOIG/data/models/tinyEssence/tiny_gen.essence --problemModel $AUTOIG/data/models/tinyEssence/tinyProb.essence --instanceSetting graded --minSolverTime 0 --maxSolverTime 5 --solver chuffed --solverFlags="-f" --maxEvaluations 180 --genSolverTimeLimit 5
 
 ### Specifically for running car-sequencing.essence essence problem
 
