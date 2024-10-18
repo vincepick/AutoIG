@@ -6,7 +6,7 @@ docker build --platform linux/amd64 -t autoig_volume .
 
 docker run -it --name autoig_container -v <your path>/AutoIG:/AutoIG autoig_volume /bin/bash
 
-## Commands
+## Commands To Run Once Inside Interactive Container
 
 mv conjure AutoIG/bin
 
